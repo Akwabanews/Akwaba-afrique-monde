@@ -17,11 +17,11 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  login,
-  loginWithEmail, 
-  registerWithEmail, 
+  signInWithOtp,
+  signInWithPassword, 
+  signUpWithEmail, 
   resetPassword
-} from '../lib/firebase';
+} from '../lib/supabase';
 import { cn } from '../lib/utils';
 
 type AuthMode = 'login' | 'register' | 'forgot-password';
@@ -62,16 +62,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
       if (mode === 'login') {
         if (!password) {
           // Magic Link flow
-          await loginWithEmail(email, '');
+          await signInWithPassword(email, '');
           setSuccessMessage("Lien magique envoyé ! Vérifiez votre boîte mail.");
         } else {
-          const user = await loginWithEmail(email, password);
+          const user = await signInWithPassword(email, password);
           onSuccess?.(user);
           onClose();
         }
       } else if (mode === 'register') {
         if (!name) throw new Error("Veuillez entrer votre nom complet.");
-        const user = await registerWithEmail(email, password, name);
+        const user = await signUpWithEmail(email, password, name);
         setSuccessMessage("Compte créé ! Un email de confirmation a peut-être été envoyé.");
         if (user) {
           onSuccess?.(user);

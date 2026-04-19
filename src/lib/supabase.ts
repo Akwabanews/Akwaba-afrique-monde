@@ -548,17 +548,28 @@ export const SupabaseService = {
     const profile = await this.getUserProfile(userId);
     if (!profile) return false;
     
-    if (profile.isPremium && profile.premiumUntil) {
-      const now = new Date();
-      const expirationDate = new Date(profile.premiumUntil);
-      
-      if (now > expirationDate) {
-        await this.updateUserProfile(userId, { isPremium: false });
-        return false;
+    // If it's explicitly marked as premium
+    if (profile.isPremium) {
+      // If there's an expiration date, check it
+      if (profile.premiumUntil) {
+        const now = new Date();
+        const expirationDate = new Date(profile.premiumUntil);
+        
+        if (now > expirationDate) {
+          // Auto-disable if expired
+          await this.updateUserProfile(userId, { isPremium: false });
+          return false;
+        }
+        return true;
       }
+      
+      // If marked premium but no expiration date, we assume it's lifetime or should be checked by admin
+      // But for safety, news sites usually have durations. 
+      // If we want total security, we could return false if premiumUntil is missing.
+      // For now, return true but log warning.
       return true;
     }
-    return !!profile.isPremium;
+    return false;
   },
 
   async upgradeToPremium(userId: string, method?: string, months: number = 1): Promise<void> {
@@ -589,12 +600,48 @@ export const SupabaseService = {
       .eq('isPremium', true);
     if (error) return [];
     return data as UserProfile[];
+  },
+
+  async recordTransaction(userId: string, email: string, amount: number, method: string, type: 'subscription' | 'donation', status: 'pending' | 'success' | 'failed' = 'success'): Promise<void> {
+    if (isPlaceholder) return;
+    const { error } = await supabase.from('transactions').insert({
+      userId,
+      email,
+      amount,
+      method,
+      type,
+      status,
+      date: new Date().toISOString()
+    });
+    if (error) console.error("Error recording transaction:", error);
+  },
+
+  async getTransactions(): Promise<any[]> {
+    if (isPlaceholder) return [];
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .order('date', { ascending: false });
+    if (error) {
+      console.error("Error fetching transactions:", error);
+      return [];
+    }
+    return data;
+  },
+
+  async updateTransactionStatus(id: string, status: 'success' | 'failed'): Promise<void> {
+    if (isPlaceholder) return;
+    const { error } = await supabase
+      .from('transactions')
+      .update({ status })
+      .eq('id', id);
+    if (error) console.error("Error updating transaction status:", error);
   }
 };
 
 // --- Auth Utilities ---
 
-export const login = async (email: string) => {
+export const signInWithOtp = async (email: string) => {
   const { data, error } = await supabase.auth.signInWithOtp({
     email,
     options: {
@@ -605,14 +652,14 @@ export const login = async (email: string) => {
   return data;
 };
 
-export const loginWithEmail = async (email: string, pass: string) => {
-  if (!pass) return login(email);
+export const signInWithPassword = async (email: string, pass: string) => {
+  if (!pass) return signInWithOtp(email);
   const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
   if (error) throw error;
   return data.user;
 };
 
-export const registerWithEmail = async (email: string, pass: string, name: string) => {
+export const signUpWithEmail = async (email: string, pass: string, name: string) => {
   const { data, error } = await supabase.auth.signUp({
     email, password: pass, options: { data: { display_name: name } }
   });
@@ -620,13 +667,16 @@ export const registerWithEmail = async (email: string, pass: string, name: strin
   return data.user;
 };
 
-export const handleUserLogout = async () => { await supabase.auth.signOut(); };
+export const signOut = async () => { await supabase.auth.signOut(); };
 export const resetPassword = async (email: string) => { await supabase.auth.resetPasswordForEmail(email); };
 export const setupRecaptcha = (id: string) => null;
 export const sendPhoneOtp = async (phone: string) => null;
 
 export const auth: any = {
-  get currentUser() { return null; },
+  get currentUser() { 
+    // In Supabase, we use supabase.auth.getSession() or onAuthStateChange
+    return null; 
+  },
   async signOut() { await supabase.auth.signOut(); }
 };
 

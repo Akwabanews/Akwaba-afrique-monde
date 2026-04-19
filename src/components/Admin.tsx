@@ -59,7 +59,7 @@ import { cn } from '../lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { SupabaseService } from '../lib/firebase';
+import { SupabaseService } from '../lib/supabase';
 
 export const AdminLogin = ({ onLogin }: { onLogin: () => void }) => {
   return (
@@ -832,13 +832,22 @@ export const AdminDashboard = ({
               className="space-y-8 pb-20"
             >
               <div className="bg-white rounded-[40px] border border-slate-100 shadow-2xl p-10 space-y-12 Africa-pattern">
-                <div className="flex items-center gap-4">
-                  <div className="p-4 bg-primary/10 rounded-2xl text-primary shadow-lg shadow-primary/5">
-                    <CreditCard size={32} />
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div className="flex items-center gap-4">
+                    <div className="p-4 bg-primary/10 rounded-2xl text-primary shadow-lg shadow-primary/5">
+                      <CreditCard size={32} />
+                    </div>
+                    <div>
+                      <h3 className="text-3xl font-black tracking-tight">Gestion des Paiements</h3>
+                      <p className="text-slate-400 font-medium italic">Configurez vos moyens de paiement et vos tarifs premium.</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-3xl font-black tracking-tight">Gestion des Paiements</h3>
-                    <p className="text-slate-400 font-medium italic">Configurez vos moyens de paiement et vos tarifs premium.</p>
+                  <div className="bg-slate-900 text-white px-8 py-4 rounded-[25px] flex items-center gap-6 shadow-xl">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black uppercase text-slate-500">Revenu Estimé</p>
+                      <p className="text-2xl font-black font-mono">{(stats?.totalRevenue || 0).toLocaleString()} <span className="text-primary text-xs">XOF</span></p>
+                    </div>
+                    <TrendingUp className="text-primary opacity-50" size={32} />
                   </div>
                 </div>
 
@@ -1042,6 +1051,8 @@ export const AdminDashboard = ({
                     </div>
                   </div>
                 </div>
+                
+                <TransactionsList />
 
                 {/* Sticky Footer for save */}
                 <div className="sticky bottom-0 bg-white/80 backdrop-blur-md p-6 border-t border-slate-50 -mx-10 -mb-10 flex justify-end items-center gap-6">
@@ -1169,6 +1180,32 @@ export const AdminDashboard = ({
                           </span>
                         </div>
                       ))}
+                    </div>
+                    <div className="p-4 bg-emerald-50 border-t border-emerald-100 flex items-center justify-between px-8">
+                       <div className="flex items-center gap-3">
+                         <Award className="text-emerald-500" size={20} />
+                         <div>
+                            <p className="text-[10px] font-black uppercase text-emerald-800">Support Client Prioritaire</p>
+                            <p className="text-[9px] text-emerald-600 font-bold italic">Actions rapides pour cet utilisateur</p>
+                         </div>
+                       </div>
+                       <div className="flex gap-2">
+                          <button 
+                            onClick={async () => {
+                              if(confirm(`Activer 1 mois Premium pour l'utilisateur ${activeChatUserId} ?`)) {
+                                try {
+                                  await SupabaseService.upgradeToPremium(activeChatUserId, 'Support Manual', 1);
+                                  alert("Premium activé avec succès !");
+                                } catch(e) {
+                                  alert("Erreur lors de l'activation.");
+                                }
+                              }
+                            }}
+                            className="bg-emerald-500 text-white text-[9px] font-black px-4 py-2 rounded-xl shadow-lg shadow-emerald-500/20 hover:scale-105 transition-all"
+                          >
+                            ACTIVER PREMIUM
+                          </button>
+                       </div>
                     </div>
                     <div className="p-6 border-t border-slate-100 flex gap-4 bg-white">
                       <input 
@@ -1678,6 +1715,73 @@ export const AdminDashboard = ({
               </button>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const TransactionsList = () => {
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        const data = await SupabaseService.getTransactions();
+        setTransactions(data);
+      } catch (err) {
+        console.error("Error loading transactions:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTransactions();
+  }, []);
+
+  if (loading) return <div className="p-10 text-center"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" /></div>;
+
+  return (
+    <div className="space-y-6 mt-16 animate-in slide-in-from-bottom-5">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-black">Journal des Transactions</h3>
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{transactions.length} transactions</span>
+      </div>
+      
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden">
+        <div className="grid grid-cols-12 px-6 py-4 bg-slate-50/50 border-b border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-400">
+          <div className="col-span-3">Utilisateur / Email</div>
+          <div className="col-span-2">Montant</div>
+          <div className="col-span-2">Type</div>
+          <div className="col-span-2">Méthode</div>
+          <div className="col-span-2">Date</div>
+          <div className="col-span-1 text-right">Statut</div>
+        </div>
+        <div className="divide-y divide-slate-100">
+          {transactions.length === 0 ? (
+            <div className="p-10 text-center text-slate-400 font-medium italic">Aucune transaction enregistrée.</div>
+          ) : (
+            transactions.map(t => (
+              <div key={t.id} className="grid grid-cols-12 px-6 py-4 items-center hover:bg-slate-50 transition-colors text-xs">
+                <div className="col-span-3 truncate font-bold text-slate-900" title={t.email}>{t.email}</div>
+                <div className="col-span-2 font-black text-slate-700">{t.amount.toLocaleString()} XOF</div>
+                <div className="col-span-2">
+                   <span className={cn(
+                     "px-2 py-0.5 rounded-full text-[9px] font-black uppercase",
+                     t.type === 'subscription' ? "bg-primary/10 text-primary" : "bg-red-50 text-red-600"
+                   )}>{t.type === 'subscription' ? 'Abonnement' : 'Don'}</span>
+                </div>
+                <div className="col-span-2 font-medium uppercase text-slate-400 tracking-tighter">{t.method}</div>
+                <div className="col-span-2 text-[10px] text-slate-400">{format(new Date(t.date), 'dd/MM HH:mm')}</div>
+                <div className="col-span-1 text-right">
+                   <span className={cn(
+                     "inline-block w-2 h-2 rounded-full",
+                     t.status === 'success' ? "bg-emerald-500" : (t.status === 'failed' ? "bg-red-500" : "bg-amber-500")
+                   )} title={t.status} />
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

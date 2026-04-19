@@ -75,14 +75,14 @@ import { AuthorProfile } from './components/AuthorProfile';
 import { AuthorsList } from './components/AuthorsList';
 import { 
   SupabaseService, 
-  login, 
-  loginWithEmail, 
-  registerWithEmail, 
+  signInWithOtp, 
+  signInWithPassword, 
+  signUpWithEmail, 
   setupRecaptcha, 
   sendPhoneOtp, 
   auth,
   onAuthStateChanged
-} from './lib/firebase';
+} from './lib/supabase';
 // import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth'; // Removed
 type FirebaseUser = any; 
 
@@ -2204,11 +2204,25 @@ export default function App() {
 
   useEffect(() => {
     // Check for payment success redirection (e.g. ?payment_success=true&method=PayPal)
+    if (!isAuthChecked || !currentUser) return;
+
     const params = new URLSearchParams(window.location.search);
-    if (params.get('payment_success') === 'true' && currentUser) {
+    if (params.get('payment_success') === 'true') {
       const method = params.get('method') || 'unknown';
+      const amount = parseInt(params.get('amount') || '0') || siteSettings.premiumPrice;
+
       SupabaseService.upgradeToPremium(currentUser.uid, method, siteSettings.premiumDurationMonths || 1)
         .then(() => {
+          // Record the transaction for history
+          SupabaseService.recordTransaction(
+            currentUser.uid, 
+            currentUser.email, 
+            amount, 
+            method, 
+            'subscription', 
+            'success'
+          );
+          
           SupabaseService.getUserProfile(currentUser.uid).then(profile => {
             setCurrentUser(prev => prev ? { 
               ...prev, 
@@ -2224,13 +2238,13 @@ export default function App() {
           setActiveNotification({ message: "Erreur lors de la confirmation du paiement.", type: 'urgent' });
         });
     }
-  }, [currentUser, siteSettings]);
+  }, [isAuthChecked, currentUser, siteSettings]);
 
   const handleAdminLogin = async () => {
     try {
       const adminEmail = 'akwabanewsinfo@gmail.com';
       setActiveNotification({ message: "Envoi du lien magique pour l'admin...", type: 'info' });
-      await login(adminEmail);
+      await signInWithOtp(adminEmail);
       setActiveNotification({ message: "Lien magique envoyé ! Vérifiez l'e-mail " + adminEmail, type: 'success' });
     } catch (error: any) {
       console.error("Admin Login Error:", error);
@@ -2911,9 +2925,13 @@ export default function App() {
   }, [visibleSearchCount]);
 
   const searchResults = visibleArticles.filter(a => {
-    const matchesQuery = a.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                       a.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                       a.tags?.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
+    const query = searchQuery.toLowerCase();
+    const titleMatch = (a.title || '').toLowerCase().includes(query);
+    const excerptMatch = (a.excerpt || '').toLowerCase().includes(query);
+    const contentMatch = (a.content || '').toLowerCase().includes(query);
+    const tagsMatch = a.tags?.some(t => t.toLowerCase().includes(query));
+    
+    const matchesQuery = titleMatch || excerptMatch || contentMatch || tagsMatch;
     const matchesAuthor = !filterAuthor || a.author.toLowerCase().includes(filterAuthor.toLowerCase());
     const matchesCategory = !filterCategory || a.category === filterCategory;
     const matchesDate = !filterDate || a.date.startsWith(filterDate);
@@ -3880,7 +3898,7 @@ export default function App() {
                       const isPremiumArticle = selectedArticle.isPremium;
                       const hasAccess = !isPremiumArticle || (currentUser && currentUser.isPremium);
                       
-                      const content = selectedArticle.content;
+                      const content = selectedArticle.content || '';
                       const paragraphs = content.split('\n\n');
 
                       if (!hasAccess && paragraphs.length > 2) {
@@ -4513,7 +4531,19 @@ export default function App() {
 
                     <button 
                       onClick={() => {
+                        const amountVal = parseInt(selectedAmount) || 0;
                         const payLink = siteSettings.paymentLinks?.[selectedPayment];
+                        
+                        // Record transaction in DB
+                        SupabaseService.recordTransaction(
+                          currentUser?.uid || 'anonymous',
+                          currentUser?.email || 'visiteur@anonyme.com',
+                          amountVal,
+                          selectedPayment,
+                          'donation',
+                          'success' // We assume success if no payLink, or pending if redirect
+                        );
+
                         if (payLink) {
                           window.location.href = payLink;
                         } else {
