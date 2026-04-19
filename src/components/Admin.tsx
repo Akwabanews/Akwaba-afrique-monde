@@ -1923,7 +1923,12 @@ export const AdminEditor = ({
       await onSave(finalData);
     } catch (e: any) {
       console.error("Save error in AdminEditor:", e);
-      alert(`Une erreur est survenue lors de l'enregistrement : ${e.message || "Erreur de permission ou de connexion"}`);
+      const details = e.message || "Erreur de permission ou de connexion";
+      if (details.includes("Could not find the table")) {
+        alert(`TABLE MANQUANTE : La table n'a pas été trouvée sur Supabase.\n\nSOLUTION : Exécutez le script d'initialisation 'supabase_init.sql' dans l'onglet SQL Editor de votre projet Supabase.`);
+      } else {
+        alert(`Une erreur est survenue lors de l'enregistrement : ${details}`);
+      }
     } finally {
       clearTimeout(safetyTimer);
       setIsSaving(false);

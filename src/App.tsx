@@ -2292,7 +2292,11 @@ export default function App() {
     } catch (error: any) {
       console.error("Error saving article:", error);
       const details = error.message || "Erreur inconnue";
-      alert(`Erreur lors de la sauvegarde de l'article.\n\nDétails : ${details}\n\nNote : Vérifiez que vous êtes bien connecté et que la table 'articles' existe.`);
+      if (details.includes("Could not find the table")) {
+        alert(`ERREUR CRITIQUE : La table 'articles' n'existe pas dans votre base de données Supabase.\n\nACTION REQUISE : Allez dans votre tableau de bord Supabase > SQL Editor, copiez et exécutez le contenu du fichier 'supabase_init.sql' présent dans le code du projet.`);
+      } else {
+        alert(`Erreur lors de la sauvegarde de l'article.\n\nDétails : ${details}\n\nNote : Vérifiez que vous êtes bien connecté et que la table 'articles' existe.`);
+      }
     }
   };
 
