@@ -683,7 +683,24 @@ export const signUpWithEmail = async (email: string, pass: string, name: string)
       emailRedirectTo: window.location.origin,
     }
   });
+  
   if (result.error) throw result.error;
+
+  // Even if Supabase logs them in immediately (auto-confirm), 
+  // try to force a verification email if that's what the user wants.
+  // Note: This may fail if the user is already confirmed depending on Supabase settings.
+  try {
+    await supabase.auth.resend({
+      type: 'signup',
+      email: email,
+      options: {
+        emailRedirectTo: window.location.origin
+      }
+    });
+  } catch (e) {
+    console.warn("Resend confirmation failed (might be already confirmed or disabled):", e);
+  }
+
   return result.data;
 };
 

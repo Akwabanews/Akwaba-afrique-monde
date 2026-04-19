@@ -20,7 +20,8 @@ import {
   signInWithOtp,
   signInWithPassword, 
   signUpWithEmail, 
-  resetPassword
+  resetPassword,
+  signOut
 } from '../lib/supabase';
 import { cn } from '../lib/utils';
 
@@ -76,6 +77,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           if (setActiveNotification) setActiveNotification({ message: msg, type: 'success' });
         } else {
           const user: any = await signInWithPassword(email, password);
+          
+          // Strict check: if Supabase project allows login without confirmation, we override it here
+          if (user && !user.email_confirmed_at) {
+            await signOut();
+            setIsLoading(false);
+            setError("Votre adresse e-mail n'est pas encore confirmée. Veuillez cliquer sur le lien envoyé dans votre boîte mail lors de l'inscription.");
+            return;
+          }
+
           if (setActiveNotification) setActiveNotification({ message: `Heureux de vous revoir, ${user?.displayName || 'Utilisateur'} !`, type: 'success' });
           onSuccess?.(user);
           onClose();
@@ -84,15 +94,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         if (!name) throw new Error("Veuillez entrer votre nom complet.");
         const { user, session }: any = await signUpWithEmail(email, password, name);
         
-        // Supabase sends confirmation email if Email confirmation is ON.
-        // In that case, session will be null.
-        if (!session) {
+        // We check if the email is already confirmed. 
+        // If Supabase is set to auto-confirm, we check user metadata or session.
+        const isConfirmed = !!(user?.email_confirmed_at || session?.user?.email_confirmed_at);
+
+        // If not confirmed OR if we want to force the verification flow as requested
+        if (!isConfirmed || !session) {
+          // If we got a session but it's not confirmed (or we want to force verification), log them out
+          if (session) await signOut();
+          
           setIsVerificationPending(true);
-          const msg = "Compte créé avec succès ! Un lien de validation vous a été envoyé par e-mail.";
+          const msg = "Inscription réussie ! Un lien de validation vous a été envoyé par e-mail.";
           setSuccessMessage(msg);
           if (setActiveNotification) setActiveNotification({ message: msg, type: 'success' });
         } else {
-          // If session exists (auto-confirm is ON), we log them in immediately
+          // Only if auto-confirmed and we are okay with it
           const normalizedUser = {
             ...user,
             uid: user.id || user.uid,
