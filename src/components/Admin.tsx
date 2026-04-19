@@ -290,7 +290,11 @@ export const AdminDashboard = ({
   );
 
   useEffect(() => {
-    localStorage.setItem('akwaba_admin_tab', activeTab);
+    try {
+      localStorage.setItem('akwaba_admin_tab', activeTab);
+    } catch (e) {
+      console.warn("LocalStorage save error:", e);
+    }
   }, [activeTab]);
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -299,14 +303,29 @@ export const AdminDashboard = ({
     email: '',
     phone: '',
     address: '',
+    facebookUrl: '',
+    twitterUrl: '',
+    instagramUrl: '',
+    tiktokUrl: '',
+    linkedinUrl: '',
+    youtubeUrl: '',
     categories: [],
     maintenanceMode: false,
+    urgentBannerActive: false,
+    urgentBannerText: '',
+    adSlotHeader: '',
+    adSlotSidebar: '',
     donationAmounts: [1000, 2000, 5000],
     donationPaymentMethods: [],
     premiumPrice: 5000,
     isDonationActive: false,
     isPremiumActive: false,
-    activePaymentMethods: {}
+    activePaymentMethods: {},
+    paymentLinks: {},
+    orangeMoneyNumber: '',
+    mtnMoneyNumber: '',
+    moovMoneyNumber: '',
+    waveNumber: ''
   });
   const [newCategory, setNewCategory] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -314,14 +333,18 @@ export const AdminDashboard = ({
   // Sync tempSettings when props change
   useEffect(() => {
     if (settings) {
-      setTempSettings(prev => ({
-        ...prev,
-        ...settings,
-        activePaymentMethods: settings.activePaymentMethods || prev.activePaymentMethods || {},
-        paymentLinks: settings.paymentLinks || prev.paymentLinks || {},
-        categories: settings.categories || prev.categories || [],
-        donationAmounts: settings.donationAmounts || prev.donationAmounts || [1000, 2000, 5000]
-      }));
+      setTempSettings(prev => {
+        // Only update if settings are actually different to avoid unnecessary re-renders
+        // or if we are not currently saving
+        return {
+          ...prev,
+          ...settings,
+          activePaymentMethods: settings.activePaymentMethods || prev.activePaymentMethods || {},
+          paymentLinks: settings.paymentLinks || prev.paymentLinks || {},
+          categories: settings.categories || prev.categories || [],
+          donationAmounts: settings.donationAmounts || prev.donationAmounts || [1000, 2000, 5000]
+        };
+      });
     }
   }, [settings]);
 
@@ -584,7 +607,7 @@ export const AdminDashboard = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="md:col-span-3 space-y-6">
+        <div key={activeTab} className="md:col-span-3 space-y-6">
           {activeTab !== 'settings' && (
             <div className="relative">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
@@ -774,10 +797,19 @@ export const AdminDashboard = ({
               <div className="bg-white rounded-3xl border border-slate-100 shadow-xl p-8 space-y-6">
                 <h3 className="text-xl font-black flex items-center gap-2"><Tag /> Gestion des Catégories</h3>
                 <div className="flex flex-wrap gap-2">
-                  {tempSettings.categories?.map((cat, i) => (
+                  {tempSettings?.categories?.map((cat, i) => (
                     <div key={i} className="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-full text-xs font-black">
                       {cat}
-                      <button onClick={() => setTempSettings({...tempSettings, categories: tempSettings.categories.filter(c => c !== cat)})} className="text-red-500 hover:scale-110"><X size={14}/></button>
+                      <button 
+                        onClick={() => {
+                          if (tempSettings?.categories) {
+                            setTempSettings({...tempSettings, categories: tempSettings.categories.filter(c => c !== cat)});
+                          }
+                        }} 
+                        className="text-red-500 hover:scale-110"
+                      >
+                        <X size={14}/>
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -791,8 +823,11 @@ export const AdminDashboard = ({
                   />
                   <button 
                     onClick={() => {
-                      if(newCategory && !tempSettings.categories.includes(newCategory)) {
-                        setTempSettings({...tempSettings, categories: [...tempSettings.categories, newCategory]});
+                      if(newCategory && tempSettings?.categories && !tempSettings.categories.includes(newCategory)) {
+                        setTempSettings({
+                          ...tempSettings, 
+                          categories: [...(tempSettings.categories || []), newCategory]
+                        });
                         setNewCategory('');
                       }
                     }}

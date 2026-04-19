@@ -30,9 +30,15 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: (user: any) => void;
+  setActiveNotification?: (notif: any) => void;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => {
+export const AuthModal: React.FC<AuthModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onSuccess,
+  setActiveNotification
+}) => {
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -63,23 +69,30 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
         if (!password) {
           // Magic Link flow
           await signInWithPassword(email, '');
-          setSuccessMessage("Lien magique envoyé ! Vérifiez votre boîte mail.");
+          const msg = "Lien magique envoyé ! Vérifiez votre boîte mail.";
+          setSuccessMessage(msg);
+          if (setActiveNotification) setActiveNotification({ message: msg, type: 'success' });
         } else {
-          const user = await signInWithPassword(email, password);
+          const user: any = await signInWithPassword(email, password);
+          if (setActiveNotification) setActiveNotification({ message: `Heureux de vous revoir, ${user?.displayName || 'Utilisateur'} !`, type: 'success' });
           onSuccess?.(user);
           onClose();
         }
       } else if (mode === 'register') {
         if (!name) throw new Error("Veuillez entrer votre nom complet.");
         const user = await signUpWithEmail(email, password, name);
-        setSuccessMessage("Compte créé ! Un email de confirmation a peut-être été envoyé.");
+        const msg = "Compte créé ! Vérifiez votre boîte mail pour confirmer votre inscription.";
+        setSuccessMessage(msg);
+        if (setActiveNotification) setActiveNotification({ message: msg, type: 'success' });
         if (user) {
           onSuccess?.(user);
           onClose();
         }
       } else if (mode === 'forgot-password') {
         await resetPassword(email);
-        setSuccessMessage("Un email de réinitialisation a été envoyé à " + email);
+        const msg = "Un email de réinitialisation a été envoyé à " + email;
+        setSuccessMessage(msg);
+        if (setActiveNotification) setActiveNotification({ message: msg, type: 'success' });
         setMode('login');
       }
     } catch (err: any) {

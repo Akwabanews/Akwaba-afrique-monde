@@ -2767,7 +2767,7 @@ export default function App() {
     
     try {
       await SupabaseService.subscribe(newsletterEmail);
-      setActiveNotification("Merci ! Vous êtes maintenant inscrit à la newsletter.");
+      setActiveNotification({ message: "Merci ! Vous êtes maintenant inscrit à la newsletter.", type: 'success' });
       setNewsletterEmail('');
     } catch (error) {
       console.error("Newsletter error:", error);
@@ -4505,7 +4505,7 @@ export default function App() {
                     <div className="space-y-4">
                       <h4 className="font-bold text-sm">Choisissez un montant</h4>
                       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                        {siteSettings.donationAmounts.map(amount => (
+                        {siteSettings.donationAmounts?.map(amount => (
                           <button 
                             key={amount} 
                             onClick={() => setSelectedAmount(amount.toString())}
@@ -5139,8 +5139,8 @@ Dernière mise à jour : Avril 2026
                     try {
                       await SupabaseService.subscribe(newsletterEmail);
                       setNewsletterEmail('');
-                      setActiveNotification("Inscription réussie ! Merci d'avoir rejoint Akwaba Info.");
-                      setTimeout(() => setActiveNotification(null), 3000);
+                      setActiveNotification({ message: "Inscription réussie ! Merci d'avoir rejoint Akwaba Info.", type: 'success' });
+                      setTimeout(() => setActiveNotification(null), 5000);
                     } catch (e) {
                       alert("Erreur lors de l'inscription.");
                     }
@@ -5212,6 +5212,7 @@ Dernière mise à jour : Avril 2026
         isOpen={showLoginModal} 
         onClose={() => setShowLoginModal(false)} 
         onSuccess={handleAuthSuccess}
+        setActiveNotification={setActiveNotification}
       />
     </div>
     </>

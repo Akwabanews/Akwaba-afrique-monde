@@ -344,6 +344,21 @@ export const SupabaseService = {
     await supabase
       .from('subscribers')
       .insert({ email, date: new Date().toISOString() });
+    
+    // Also send a notification to admin about new subscriber
+    try {
+      await this.sendNotification({
+        id: `sub-${Date.now()}`,
+        userId: 'global',
+        title: 'Nouvel abonné',
+        message: `${email} vient de s'abonner à la newsletter.`,
+        date: new Date().toISOString(),
+        read: false,
+        type: 'info'
+      });
+    } catch (e) {
+      console.warn("Could not send admin notification for newsletter subscriber:", e);
+    }
   },
 
   async getSubscribers(): Promise<Subscriber[]> {
@@ -656,19 +671,28 @@ export const signInWithPassword = async (email: string, pass: string) => {
   if (!pass) return signInWithOtp(email);
   const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
   if (error) throw error;
-  return data.user;
+  return normalizeUser(data.user);
 };
 
 export const signUpWithEmail = async (email: string, pass: string, name: string) => {
   const { data, error } = await supabase.auth.signUp({
-    email, password: pass, options: { data: { display_name: name } }
+    email, 
+    password: pass, 
+    options: { 
+      data: { display_name: name },
+      emailRedirectTo: window.location.origin,
+    }
   });
   if (error) throw error;
-  return data.user;
+  return normalizeUser(data.user);
 };
 
 export const signOut = async () => { await supabase.auth.signOut(); };
-export const resetPassword = async (email: string) => { await supabase.auth.resetPasswordForEmail(email); };
+export const resetPassword = async (email: string) => { 
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin
+  }); 
+};
 export const setupRecaptcha = (id: string) => null;
 export const sendPhoneOtp = async (phone: string) => null;
 
