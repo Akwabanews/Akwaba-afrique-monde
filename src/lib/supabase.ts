@@ -675,7 +675,7 @@ export const signInWithPassword = async (email: string, pass: string) => {
 };
 
 export const signUpWithEmail = async (email: string, pass: string, name: string) => {
-  const { data, error } = await supabase.auth.signUp({
+  const result = await supabase.auth.signUp({
     email, 
     password: pass, 
     options: { 
@@ -683,8 +683,8 @@ export const signUpWithEmail = async (email: string, pass: string, name: string)
       emailRedirectTo: window.location.origin,
     }
   });
-  if (error) throw error;
-  return normalizeUser(data.user);
+  if (result.error) throw result.error;
+  return result.data;
 };
 
 export const signOut = async () => { await supabase.auth.signOut(); };

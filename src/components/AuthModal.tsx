@@ -47,11 +47,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isVerificationPending, setIsVerificationPending] = useState(false);
 
   const resetState = () => {
     setError(null);
     setSuccessMessage(null);
     setIsLoading(false);
+    setIsVerificationPending(false);
   };
 
   const handleModeChange = (newMode: AuthMode) => {
@@ -80,12 +82,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         }
       } else if (mode === 'register') {
         if (!name) throw new Error("Veuillez entrer votre nom complet.");
-        const user = await signUpWithEmail(email, password, name);
-        const msg = "Compte créé ! Vérifiez votre boîte mail pour confirmer votre inscription.";
-        setSuccessMessage(msg);
-        if (setActiveNotification) setActiveNotification({ message: msg, type: 'success' });
-        if (user) {
-          onSuccess?.(user);
+        const { user, session }: any = await signUpWithEmail(email, password, name);
+        
+        // Supabase sends confirmation email if Email confirmation is ON.
+        // In that case, session will be null.
+        if (!session) {
+          setIsVerificationPending(true);
+          const msg = "Compte créé avec succès ! Un lien de validation vous a été envoyé par e-mail.";
+          setSuccessMessage(msg);
+          if (setActiveNotification) setActiveNotification({ message: msg, type: 'success' });
+        } else {
+          // If session exists (auto-confirm is ON), we log them in immediately
+          const normalizedUser = {
+            ...user,
+            uid: user.id || user.uid,
+            displayName: user.user_metadata?.display_name || user.user_metadata?.full_name || user.email?.split('@')[0]
+          };
+          onSuccess?.(normalizedUser);
           onClose();
         }
       } else if (mode === 'forgot-password') {
@@ -147,34 +160,65 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
 
         <div className="p-8">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
-              {mode === 'login' && "Bon retour !"}
-              {mode === 'register' && "Rejoignez-nous"}
-              {mode === 'forgot-password' && "Mot de passe oublié"}
-            </h2>
-            <p className="text-slate-500 text-sm font-medium mt-1">
-              {mode === 'login' && "Connectez-vous pour ne rien manquer de l'actualité."}
-              {mode === 'register' && "Créez votre compte Akwaba Info en quelques secondes."}
-              {mode === 'forgot-password' && "Entrez votre email pour recevoir les instructions."}
-            </p>
-          </div>
-
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3 animate-shake">
-              <AlertTriangle className="text-red-500 shrink-0 mt-0.5" size={18} />
-              <p className="text-red-700 text-xs font-bold leading-tight">{error}</p>
+          {isVerificationPending ? (
+            <div className="text-center space-y-6 py-4">
+              <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto animate-bounce-slow">
+                <Mail size={40} />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Vérifiez votre boîte mail</h3>
+                <p className="text-slate-500 text-sm font-medium leading-relaxed">
+                  Un lien magique de confirmation a été envoyé à <span className="text-primary font-bold">{email}</span>.
+                </p>
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs text-slate-600 font-medium italic mt-4">
+                  "Vous devez cliquer sur le lien dans l'email pour activer votre compte avant de pouvoir vous connecter."
+                </div>
+              </div>
+              <div className="pt-4">
+                <button
+                  onClick={() => handleModeChange('login')}
+                  className="w-full py-4 bg-primary text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-emerald-600 transition-all flex items-center justify-center gap-3"
+                >
+                  <ArrowRight size={20} /> Retour à la connexion
+                </button>
+                <button
+                  onClick={onClose}
+                  className="w-full py-4 mt-2 text-slate-400 font-bold text-xs uppercase tracking-widest hover:text-slate-600 transition-colors"
+                >
+                  Fermer
+                </button>
+              </div>
             </div>
-          )}
+          ) : (
+            <>
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight">
+                  {mode === 'login' && "Bon retour !"}
+                  {mode === 'register' && "Rejoignez-nous"}
+                  {mode === 'forgot-password' && "Mot de passe oublié"}
+                </h2>
+                <p className="text-slate-500 text-sm font-medium mt-1">
+                  {mode === 'login' && "Connectez-vous pour ne rien manquer de l'actualité."}
+                  {mode === 'register' && "Créez votre compte Akwaba Info en quelques secondes."}
+                  {mode === 'forgot-password' && "Entrez votre email pour recevoir les instructions."}
+                </p>
+              </div>
 
-          {successMessage && (
-            <div className="mb-6 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-start gap-3">
-              <CheckCircle className="text-emerald-500 shrink-0 mt-0.5" size={18} />
-              <p className="text-emerald-700 text-xs font-bold leading-tight">{successMessage}</p>
-            </div>
-          )}
+              {error && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-3 animate-shake">
+                  <AlertTriangle className="text-red-500 shrink-0 mt-0.5" size={18} />
+                  <p className="text-red-700 text-xs font-bold leading-tight">{error}</p>
+                </div>
+              )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+              {successMessage && (
+                <div className="mb-6 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-start gap-3">
+                  <CheckCircle className="text-emerald-500 shrink-0 mt-0.5" size={18} />
+                  <p className="text-emerald-700 text-xs font-bold leading-tight">{successMessage}</p>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'register' && (
               <div className="space-y-1.5">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-4">Nom Complet</label>
@@ -294,8 +338,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </p>
             )}
           </div>
-        </div>
-      </motion.div>
+        </>
+      )}
+    </div>
+  </motion.div>
     </div>
   );
 };
