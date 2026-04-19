@@ -2147,8 +2147,11 @@ export default function App() {
           console.error("Profile sync error:", e);
         }
         
-        // Admin Detection
-        const isAdminEmail = user.email === 'kwabanewsinfo@gmail.com';
+        // Admin Detection (Allowing both variants to prevent lockout)
+        const isAdminEmail = 
+          user.email === 'akwabanewsinfo@gmail.com' || 
+          user.email === 'kwabanewsinfo@gmail.com' ||
+          user.email === 'rikutotraore@gmail.com';
         
         if (isAdminEmail) {
           setIsAdminAuthenticated(true);
@@ -2255,7 +2258,7 @@ export default function App() {
 
   const handleAdminLogin = async () => {
     try {
-      const adminEmail = 'kwabanewsinfo@gmail.com';
+      const adminEmail = 'akwabanewsinfo@gmail.com';
       setActiveNotification({ 
         message: "Envoi du lien d'accès sécurisé...", 
         type: 'info' 
@@ -2339,7 +2342,7 @@ export default function App() {
       if (details.includes('settings')) {
         details = "La table 'settings' est manquante ou inaccessible dans votre base de données Supabase.";
       }
-      alert("Erreur lors de la sauvegarde des paramètres.\n\nDétails : " + details + "\n\n1. Vérifiez que vous êtes connecté avec kwabanewsinfo@gmail.com\n2. Vérifiez que la table 'settings' existe dans votre projet Supabase.");
+      alert("Erreur lors de la sauvegarde des paramètres.\n\nDétails : " + details + "\n\n1. Vérifiez que vous êtes connecté avec akwabanewsinfo@gmail.com\n2. Vérifiez que la table 'settings' existe dans votre projet Supabase.");
     }
   };
 

@@ -23,7 +23,7 @@ CREATE POLICY "Lecture publique des articles publiés" ON articles
 
 CREATE POLICY "Admin a tous les accès sur les articles" ON articles
   FOR ALL TO authenticated
-  USING (auth.jwt() ->> 'email' = 'kwabanewsinfo@gmail.com');
+  USING (auth.jwt() ->> 'email' = 'akwabanewsinfo@gmail.com');
 
 -- 3. POLITIQUES POUR LES PROFILS (Lecture/Modification par le propriétaire, Admin peut tout voir)
 CREATE POLICY "Utilisateurs peuvent voir leur propre profil" ON profiles
@@ -34,7 +34,7 @@ CREATE POLICY "Utilisateurs peuvent modifier leur propre profil" ON profiles
 
 CREATE POLICY "Admin peut voir tous les profils" ON profiles
   FOR SELECT TO authenticated
-  USING (auth.jwt() ->> 'email' = 'kwabanewsinfo@gmail.com');
+  USING (auth.jwt() ->> 'email' = 'akwabanewsinfo@gmail.com');
 
 -- 4. POLITIQUES POUR LES TRANSACTIONS (Lecture par l'utilisateur et l'admin, Insertion par l'utilisateur)
 CREATE POLICY "Utilisateurs voient leurs propres transactions" ON transactions
@@ -42,7 +42,7 @@ CREATE POLICY "Utilisateurs voient leurs propres transactions" ON transactions
 
 CREATE POLICY "Admin voit toutes les transactions" ON transactions
   FOR SELECT TO authenticated
-  USING (auth.jwt() ->> 'email' = 'kwabanewsinfo@gmail.com');
+  USING (auth.jwt() ->> 'email' = 'akwabanewsinfo@gmail.com');
 
 CREATE POLICY "Système/Utilisateur peut insérer une transaction" ON transactions
   FOR INSERT WITH CHECK (true); -- Idéalement restreindre à auth.uid() si connecté
@@ -61,6 +61,6 @@ CREATE POLICY "Lecture publique des settings" ON settings
 
 CREATE POLICY "Seul l'admin peut modifier les settings" ON settings
   FOR ALL TO authenticated
-  USING (auth.jwt() ->> 'email' = 'kwabanewsinfo@gmail.com');
+  USING (auth.jwt() ->> 'email' = 'akwabanewsinfo@gmail.com');
 
--- NOTE : Remplacez 'kwabanewsinfo@gmail.com' par l'email de l'administrateur réel.
+-- NOTE : Remplacez 'akwabanewsinfo@gmail.com' par l'email de l'administrateur réel.
