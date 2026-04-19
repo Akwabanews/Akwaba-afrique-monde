@@ -798,9 +798,10 @@ export const AdminDashboard = ({
                 <h3 className="text-xl font-black flex items-center gap-2"><Tag /> Gestion des Catégories</h3>
                 <div className="flex flex-wrap gap-2">
                   {tempSettings?.categories?.map((cat, i) => (
-                    <div key={i} className="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-full text-xs font-black">
+                    <div key={`${cat}-${i}`} className="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-full text-xs font-black">
                       {cat}
                       <button 
+                        type="button"
                         onClick={() => {
                           if (tempSettings?.categories) {
                             setTempSettings({...tempSettings, categories: tempSettings.categories.filter(c => c !== cat)});
@@ -866,7 +867,7 @@ export const AdminDashboard = ({
               animate={{ opacity: 1, y: 0 }}
               className="space-y-8 pb-20"
             >
-              <div className="bg-white rounded-[40px] border border-slate-100 shadow-2xl p-10 space-y-12 Africa-pattern">
+              <div className="bg-white rounded-[40px] border border-slate-100 shadow-2xl p-10 space-y-12 african-pattern">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                   <div className="flex items-center gap-4">
                     <div className="p-4 bg-primary/10 rounded-2xl text-primary shadow-lg shadow-primary/5">
@@ -1004,11 +1005,12 @@ export const AdminDashboard = ({
                         <div className="space-y-3 pt-4">
                           <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Montants suggérés (XOF)</label>
                           <div className="flex flex-wrap gap-3">
-                            {tempSettings.donationAmounts?.map((amt, idx) => (
+                            {tempSettings?.donationAmounts?.map((amt, idx) => (
                               <div key={idx} className="flex items-center gap-3 bg-white border border-slate-200 pl-4 pr-2 py-2 rounded-2xl shadow-sm">
-                                <span className="font-black text-sm">{amt.toLocaleString()}</span>
+                                <span className="font-black text-sm">{amt?.toLocaleString()}</span>
                                 <button 
-                                  onClick={() => setTempSettings({...tempSettings, donationAmounts: tempSettings.donationAmounts.filter((_, i) => i !== idx)})}
+                                  type="button"
+                                  onClick={() => setTempSettings({...tempSettings, donationAmounts: (tempSettings.donationAmounts || []).filter((_, i) => i !== idx)})}
                                   className="p-1.5 hover:bg-red-50 text-red-500 rounded-lg transition-all"
                                 >
                                   <X size={14} />
