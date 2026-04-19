@@ -2109,17 +2109,24 @@ export default function App() {
     localStorage.setItem('akwaba_admin_events', JSON.stringify(adminEvents));
   }, [adminEvents]);
 
-  // Firebase Real-time Auth & Data Sync
+  const currentViewRef = useRef(currentView);
+  useEffect(() => {
+    currentViewRef.current = currentView;
+  }, [currentView]);
+
+  // Auth Listener & Data Sync
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      // Use Ref to get current state without re-running effect
+      const currentV = currentViewRef.current;
+
       if (user) {
         setCurrentUser(user);
         
-        // Premium check & Profile load
+        // Profile load & Premium check
         try {
           const profile = await SupabaseService.getUserProfile(user.uid);
           if (profile) {
-            // Check if premium is still valid
             const isActuallyPremium = await SupabaseService.checkPremiumStatus(user.uid);
             
             if (profile.likedArticles) setUserLikedArticles(new Set(profile.likedArticles));
@@ -2129,7 +2136,6 @@ export default function App() {
             if (profile.points) setUserPoints(profile.points);
             if (profile.badges) setUserBadges(profile.badges);
             
-            // Sync normalized user with profile data
             setCurrentUser(prev => ({ 
               ...prev, 
               isPremium: isActuallyPremium,
@@ -2141,12 +2147,19 @@ export default function App() {
           console.error("Profile sync error:", e);
         }
         
-        if (user.email === 'akwabanewsinfo@gmail.com') {
+        // Admin Detection
+        const isAdminEmail = user.email === 'kwabanewsinfo@gmail.com';
+        
+        if (isAdminEmail) {
           setIsAdminAuthenticated(true);
           localStorage.setItem('akwaba_is_admin', 'true');
-          // Auto-redirect admin to dashboard if they are on login page
-          if (currentView === 'admin-login') {
+          
+          // Auto-redirect admin to dashboard if they are on login page or just arriving via magic link/new session
+          const isMagicLinkRedirect = window.location.hash.includes('access_token=') || window.location.search.includes('code=');
+          if (currentV === 'admin-login' || isMagicLinkRedirect) {
             setCurrentView('admin');
+            // Clean hash to avoid double trigger
+            if (window.location.hash) window.history.replaceState({}, '', window.location.pathname);
           }
         } else {
           setIsAdminAuthenticated(false);
@@ -2242,10 +2255,16 @@ export default function App() {
 
   const handleAdminLogin = async () => {
     try {
-      const adminEmail = 'akwabanewsinfo@gmail.com';
-      setActiveNotification({ message: "Envoi du lien magique pour l'admin...", type: 'info' });
+      const adminEmail = 'kwabanewsinfo@gmail.com';
+      setActiveNotification({ 
+        message: "Envoi du lien d'accès sécurisé...", 
+        type: 'info' 
+      });
       await signInWithOtp(adminEmail);
-      setActiveNotification({ message: "Lien magique envoyé ! Vérifiez l'e-mail " + adminEmail, type: 'success' });
+      setActiveNotification({ 
+        message: "Lien envoyé ! Veuillez vérifier votre boîte de réception pour accéder au Tableau de Bord.", 
+        type: 'success' 
+      });
     } catch (error: any) {
       console.error("Admin Login Error:", error);
       alert("Erreur lors de l'envoi du lien admin : " + (error.message || "Erreur inconnue"));
@@ -2320,7 +2339,7 @@ export default function App() {
       if (details.includes('settings')) {
         details = "La table 'settings' est manquante ou inaccessible dans votre base de données Supabase.";
       }
-      alert("Erreur lors de la sauvegarde des paramètres.\n\nDétails : " + details + "\n\n1. Vérifiez que vous êtes connecté avec akwabanewsinfo@gmail.com\n2. Vérifiez que la table 'settings' existe dans votre projet Supabase.");
+      alert("Erreur lors de la sauvegarde des paramètres.\n\nDétails : " + details + "\n\n1. Vérifiez que vous êtes connecté avec kwabanewsinfo@gmail.com\n2. Vérifiez que la table 'settings' existe dans votre projet Supabase.");
     }
   };
 
