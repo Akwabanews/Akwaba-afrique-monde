@@ -2289,9 +2289,10 @@ export default function App() {
       setEditingArticle(null);
       setActiveNotification({ message: "Article enregistré avec succès !", type: 'success' });
       setTimeout(() => setActiveNotification(null), 5000);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving article:", error);
-      alert("Erreur de permission ou de connexion lors de la sauvegarde.");
+      const details = error.message || "Erreur inconnue";
+      alert(`Erreur lors de la sauvegarde de l'article.\n\nDétails : ${details}\n\nNote : Vérifiez que vous êtes bien connecté et que la table 'articles' existe.`);
     }
   };
 
@@ -2302,9 +2303,9 @@ export default function App() {
         setAdminArticles(prev => prev.filter(a => a.id !== id));
         setActiveNotification({ message: "Article supprimé du Cloud.", type: 'info' });
         setTimeout(() => setActiveNotification(null), 3000);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error deleting article:", error);
-        alert("Impossible de supprimer l'article. Vérifiez vos droits.");
+        alert(`Impossible de supprimer l'article.\n\nDétails : ${error.message || "Erreur inconnue"}`);
       }
     }
   };
@@ -2324,9 +2325,9 @@ export default function App() {
       setEditingEvent(null);
       setActiveNotification({ message: "Événement enregistré avec succès !", type: 'success' });
       setTimeout(() => setActiveNotification(null), 5000);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving event:", error);
-      alert("Erreur lors de la sauvegarde de l'événement.");
+      alert(`Erreur lors de la sauvegarde de l'événement.\n\nDétails : ${error.message || "Erreur inconnue"}`);
     }
   };
 
@@ -2353,9 +2354,9 @@ export default function App() {
         setAllComments(prev => prev.filter(c => c.id !== id));
         setActiveNotification({ message: "Commentaire supprimé.", type: 'info' });
         setTimeout(() => setActiveNotification(null), 3000);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error deleting comment:", error);
-        alert("Erreur lors de la suppression.");
+        alert(`Erreur lors de la suppression.\nDétails : ${error.message || "Erreur inconnue"}`);
       }
     }
   };
@@ -2367,9 +2368,9 @@ export default function App() {
         setAdminEvents(prev => prev.filter(e => e.id !== id));
         setActiveNotification({ message: "Événement supprimé.", type: 'info' });
         setTimeout(() => setActiveNotification(null), 3000);
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error deleting event:", error);
-        alert("Action impossible pour le moment.");
+        alert(`Action impossible pour le moment.\nDétails : ${error.message || "Erreur inconnue"}`);
       }
     }
   };
@@ -2451,10 +2452,10 @@ export default function App() {
         return [poll, ...prev];
       });
       setEditingPoll(null);
-      setActiveNotification("Sondage enregistré !");
-    } catch (error) {
+      setActiveNotification({ message: "Sondage enregistré !", type: 'success' });
+    } catch (error: any) {
       console.error(error);
-      setActiveNotification("Erreur lors de l'enregistrement.");
+      setActiveNotification({ message: `Erreur : ${error.message || "Impossible d'enregistrer le sondage"}`, type: 'urgent' });
     }
   };
 
@@ -4987,9 +4988,9 @@ Dernière mise à jour : Avril 2026
                   onEditArticle={(a) => setEditingArticle(a)}
                   onEditEvent={(e) => setEditingEvent(e)}
                   onEditPoll={(p) => setEditingPoll(p)}
-                  onCreateArticle={() => setEditingArticle({ id: Date.now().toString(), date: new Date().toISOString().split('T')[0] } as any)}
-                  onCreateEvent={() => setEditingEvent({ id: Date.now().toString(), date: new Date().toISOString().split('T')[0] } as any)}
-                  onCreatePoll={() => setEditingPoll({ id: Date.now().toString(), startDate: new Date().toISOString().split('T')[0], options: [{id: '1', text: '', votes: 0}, {id: '2', text: '', votes: 0}], active: true } as any)}
+                  onCreateArticle={() => setEditingArticle({ id: crypto.randomUUID(), date: new Date().toISOString().split('T')[0] } as any)}
+                  onCreateEvent={() => setEditingEvent({ id: crypto.randomUUID(), date: new Date().toISOString().split('T')[0] } as any)}
+                  onCreatePoll={() => setEditingPoll({ id: crypto.randomUUID(), startDate: new Date().toISOString().split('T')[0], options: [{id: '1', text: '', votes: 0}, {id: '2', text: '', votes: 0}], active: true } as any)}
                   onDeleteArticle={handleDeleteArticle}
                   onDeleteEvent={handleDeleteEvent}
                   onDeletePoll={handleDeletePoll}

@@ -1839,7 +1839,7 @@ export const AdminEditor = ({
   onCancel: () => void 
 }) => {
   const [formData, setFormData] = useState<any>({
-    id: data.id || Date.now().toString(),
+    id: data.id || crypto.randomUUID(),
     slug: data.slug || '',
     title: data.title || '',
     date: data.date || new Date().toISOString().split('T')[0],
@@ -1877,6 +1877,16 @@ export const AdminEditor = ({
   const [previewMode, setPreviewMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  const slugify = (text: string) => {
+    return text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^\w ]+/g, '')
+      .replace(/ +/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
+
   const validate = () => {
     if (!formData.title || formData.title.length < 5) {
       alert("Le titre est trop court (min. 5 caractères).");
@@ -1897,17 +1907,23 @@ export const AdminEditor = ({
     if (!validate()) return;
     setIsSaving(true);
 
-    // Sécurité : Réinitialiser isSaving après 15s si la promesse ne revient pas
+    // Auto-generate slug if missing
+    const finalData = { ...formData };
+    if (!finalData.slug && finalData.title) {
+      finalData.slug = `${slugify(finalData.title)}-${Math.random().toString(36).substring(2, 7)}`;
+    }
+
+    // Sécurité : Réinitialiser isSaving après 20s si la promesse ne revient pas
     const safetyTimer = setTimeout(() => {
       setIsSaving(false);
-      alert("L'enregistrement prend plus de temps que prévu. Vérifiez votre connexion.");
-    }, 15000);
+      alert("L'enregistrement prend du temps. Cela peut être dû à la taille des images ou à votre connexion.");
+    }, 20000);
 
     try {
-      await onSave(formData);
-    } catch (e) {
-      console.error(e);
-      alert("Une erreur est survenue lors de l'enregistrement.");
+      await onSave(finalData);
+    } catch (e: any) {
+      console.error("Save error in AdminEditor:", e);
+      alert(`Une erreur est survenue lors de l'enregistrement : ${e.message || "Erreur de permission ou de connexion"}`);
     } finally {
       clearTimeout(safetyTimer);
       setIsSaving(false);
