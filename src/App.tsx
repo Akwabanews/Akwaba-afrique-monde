@@ -3448,10 +3448,10 @@ export default function App() {
             >
               <Menu size={24} />
             </button>
-            {isAdminAuthenticated && currentView === 'admin' ? (
+            {isAdminAuthenticated ? (
               <div className="flex items-center gap-2">
-                <div className="w-2 h-8 bg-primary rounded-full" />
-                <h1 className="text-2xl font-black tracking-tighter uppercase">ADMIN</h1>
+                <div className="w-2 h-8 bg-primary rounded-full transition-all" />
+                <h1 className="text-xl md:text-2xl font-black tracking-tighter uppercase">ADMIN</h1>
               </div>
             ) : (
               <div 
@@ -3546,8 +3546,8 @@ export default function App() {
             </button>
           </nav>
 
-          <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
-            {!(isAdminAuthenticated && currentView === 'admin') && (
+          <div className="flex items-center gap-1 md:gap-2 flex-shrink">
+            {!isAdminAuthenticated && (
               <button 
                 onClick={() => navigateTo('search')}
                 className={cn("p-2 rounded-full transition-colors", isDarkMode ? "hover:bg-slate-800" : "hover:bg-slate-100")}
@@ -3565,31 +3565,31 @@ export default function App() {
             <div className="h-8 w-px bg-slate-200 mx-1 hidden md:block" />
             
             {currentUser && (
-               <div className="flex items-center gap-2">
+               <div className="flex items-center gap-1 md:gap-2">
                  {isAdminAuthenticated && (
                    <button 
                      id="desktop-admin-dash-btn"
                      onClick={() => navigateTo('admin')}
                      className={cn(
-                       "p-3 rounded-full transition-all group",
+                       "p-2 md:p-3 rounded-full transition-all group",
                        currentView === 'admin' ? "bg-primary text-white" : "hover:bg-primary/10 text-primary"
                      )}
                      title="Tableau de bord Admin"
                    >
-                     <LayoutDashboard size={22} />
+                     <LayoutDashboard size={20} className="md:w-[22px] md:h-[22px]" />
                    </button>
                  )}
                  <div className="relative">
                     <button 
                       onClick={() => setShowNotificationCenter(!showNotificationCenter)}
                       className={cn(
-                        "p-3 rounded-full transition-all relative group",
+                        "p-2 md:p-3 rounded-full transition-all relative group",
                         showNotificationCenter ? "bg-primary text-white" : "hover:bg-slate-100 text-slate-500"
                       )}
                     >
-                      <Bell size={22} />
+                      <Bell size={20} className="md:w-[22px] md:h-[22px]" />
                       {unreadNotifsCount > 0 && (
-                        <span className="absolute top-2 right-2 w-4 h-4 bg-red-500 text-white text-[8px] font-black flex items-center justify-center rounded-full border-2 border-white animate-bounce">
+                        <span className="absolute top-1 md:top-2 right-1 md:right-2 w-3.5 h-3.5 md:w-4 md:h-4 bg-red-500 text-white text-[7px] md:text-[8px] font-black flex items-center justify-center rounded-full border-2 border-white animate-bounce">
                           {unreadNotifsCount}
                         </span>
                       )}
@@ -3613,24 +3613,24 @@ export default function App() {
             )}
 
             {currentUser ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 md:gap-2">
                 <div onClick={() => navigateTo('profile')} className="relative group cursor-pointer" title="Mon Profil">
                   <img 
                     src={currentUser.photoURL || `https://ui-avatars.com/api/?name=${currentUser.displayName || 'User'}`} 
                     alt="User Profile" 
                     className={cn(
-                      "w-10 h-10 rounded-full border-2 transition-colors object-cover aspect-square",
+                      "w-8 h-8 md:w-10 md:h-10 rounded-full border-2 transition-colors object-cover aspect-square",
                       currentView === 'profile' ? "border-primary" : "border-primary/20 hover:border-primary"
                     )}
                   />
-                  <div className="absolute -bottom-1 -right-1 bg-green-500 w-3 h-3 rounded-full border-2 border-white" />
+                  <div className="absolute -bottom-0.5 -right-0.5 bg-green-500 w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border-2 border-white" />
                 </div>
                 <button 
                   onClick={handleUserLogout}
-                  className="hidden md:flex p-2 hover:bg-red-50 text-red-500 rounded-full transition-colors"
+                  className="hidden sm:flex p-2 hover:bg-red-50 text-red-500 rounded-full transition-colors"
                   title="Déconnexion"
                 >
-                  <LogOut size={20} />
+                  <LogOut size={18} className="md:w-5 md:h-5" />
                 </button>
               </div>
             ) : (
