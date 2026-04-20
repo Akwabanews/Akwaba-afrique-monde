@@ -343,11 +343,31 @@ export const SupabaseService = {
   // Newsletter
   async subscribe(email: string): Promise<void> {
     if (isPlaceholder) return;
-    await supabase
-      .from('subscribers')
-      .insert({ email, date: new Date().toISOString() });
     
-    // Also send a notification to admin about new subscriber
+    // 1. Insert into database
+    const { error } = await supabase
+      .from('subscribers')
+      .upsert({ email, date: new Date().toISOString() }, { onConflict: 'email' });
+    
+    if (error) throw error;
+
+    // 2. Call Edge Function to send Welcome Email
+    try {
+      await supabase.functions.invoke('send-newsletter-brevo', {
+        body: { 
+          email, 
+          type: 'welcome',
+          data: {
+            siteUrl: window.location.origin,
+            unsubscribeUrl: `${window.location.origin}/unsubscribe?email=${encodeURIComponent(email)}`
+          }
+        }
+      });
+    } catch (e) {
+      console.warn("Welcome email failed to send, but subscription was successful:", e);
+    }
+    
+    // 3. Also send a notification to admin about new subscriber
     try {
       await this.sendNotification({
         id: `sub-${Date.now()}`,
@@ -361,6 +381,15 @@ export const SupabaseService = {
     } catch (e) {
       console.warn("Could not send admin notification for newsletter subscriber:", e);
     }
+  },
+
+  async unsubscribe(email: string): Promise<void> {
+    if (isPlaceholder) return;
+    const { error } = await supabase
+      .from('subscribers')
+      .delete()
+      .eq('email', email);
+    if (error) throw error;
   },
 
   async getSubscribers(): Promise<Subscriber[]> {

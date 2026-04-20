@@ -1271,6 +1271,77 @@ const ReadAlso = ({ currentArticle, articles, onArticleClick, onAuthorClick }: {
   );
 };
 
+const UnsubscribeView = ({ onHome }: { onHome: () => void }) => {
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const emailParam = params.get('email');
+    if (emailParam) {
+      setEmail(emailParam);
+      handleUnsubscribe(emailParam);
+    }
+  }, []);
+
+  const handleUnsubscribe = async (targetEmail: string) => {
+    if (!targetEmail) return;
+    setStatus('loading');
+    try {
+      await SupabaseService.unsubscribe(targetEmail);
+      setStatus('success');
+    } catch (e) {
+      console.error(e);
+      setStatus('error');
+    }
+  };
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="max-w-2xl mx-auto py-20 px-6 text-center space-y-8"
+    >
+      <div className="w-24 h-24 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-8 border border-red-100 shadow-xl shadow-red-500/10">
+        <MonitorOff size={40} />
+      </div>
+      
+      {status === 'success' ? (
+        <div className="space-y-6">
+          <h2 className="text-4xl font-black tracking-tighter">Désabonnement réussi</h2>
+          <p className="text-slate-500 font-medium text-lg leading-relaxed">
+            L'adresse <span className="text-slate-900 font-black">{email}</span> a été retirée de notre liste de diffusion. Nous sommes désolés de vous voir partir.
+          </p>
+          <button 
+            onClick={onHome}
+            className="inline-flex items-center gap-2 bg-primary text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-105 transition-all shadow-lg shadow-primary/20"
+          >
+            <ArrowLeft size={16} /> Retour à l'accueil
+          </button>
+        </div>
+      ) : status === 'error' ? (
+        <div className="space-y-6">
+          <h2 className="text-4xl font-black tracking-tighter text-red-500">Oups !</h2>
+          <p className="text-slate-500 font-medium text-lg leading-relaxed">
+            Une erreur est survenue lors de la tentative de désabonnement. Veuillez réessayer plus tard ou nous contacter directement.
+          </p>
+          <button 
+            onClick={onHome}
+            className="inline-flex items-center gap-2 bg-slate-900 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-105 transition-all shadow-lg shadow-slate-900/20"
+          >
+            Retour à l'accueil
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <h2 className="text-4xl font-black tracking-tighter">Traitement en cours...</h2>
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
 const FlashInfo = ({ articles }: { articles: string[] }) => {
   return (
     <div className="bg-slate-900 text-white overflow-hidden h-10 flex items-center relative z-[60]">
@@ -1816,7 +1887,7 @@ const SplashScreen = ({ isDarkMode }: { isDarkMode: boolean }) => {
 };
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'home' | 'article' | 'search' | 'donate' | 'about' | 'privacy' | 'terms' | 'contact' | 'cookies' | 'event' | 'all-events' | 'admin' | 'admin-login' | 'webtv' | 'profile' | 'classifieds' | 'live-blog' | 'author-profile' | 'authors'>(() => {
+  const [currentView, setCurrentView] = useState<'home' | 'article' | 'search' | 'donate' | 'about' | 'privacy' | 'terms' | 'contact' | 'cookies' | 'event' | 'all-events' | 'admin' | 'admin-login' | 'webtv' | 'profile' | 'classifieds' | 'live-blog' | 'author-profile' | 'authors' | 'unsubscribe'>(() => {
     return (localStorage.getItem('akwaba_current_view') as any) || 'home';
   });
 
@@ -2861,10 +2932,14 @@ export default function App() {
     
     try {
       await SupabaseService.subscribe(newsletterEmail);
-      setActiveNotification({ message: "Merci ! Vous êtes maintenant inscrit à la newsletter.", type: 'success' });
+      setActiveNotification({ 
+        message: "Merci ! Vous êtes maintenant inscrit. Veuillez vérifier votre boîte mail (pensez aux spams).", 
+        type: 'success' 
+      });
       setNewsletterEmail('');
     } catch (error) {
       console.error("Newsletter error:", error);
+      alert("Une erreur est survenue lors de l'inscription.");
     }
   };
 
@@ -3132,6 +3207,14 @@ export default function App() {
     setIsMenuOpen(false);
     window.scrollTo(0, 0);
   };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('email') && window.location.pathname.includes('/unsubscribe')) {
+       setCurrentView('unsubscribe');
+    }
+    // Handle home redirect if needed
+  }, []);
 
   const goHome = () => {
     setCurrentView('home');
@@ -3858,6 +3941,8 @@ export default function App() {
               onAuthorClick={handleAuthorClick} 
               onBack={goHome} 
             />
+          ) : currentView === 'unsubscribe' ? (
+            <UnsubscribeView onHome={goHome} />
           ) : currentView === 'author-profile' && selectedAuthor ? (
             <AuthorProfile 
               author={selectedAuthor} 
