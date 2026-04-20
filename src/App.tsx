@@ -67,9 +67,9 @@ import ReactMarkdown from 'react-markdown';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { MOCK_ARTICLES, MOCK_EVENTS, MOCK_AUTHORS } from './constants';
-import { Article, Comment, Event, SiteSettings, Subscriber, MediaAsset, Poll, Classified, LiveBlog, AppNotification, SupportMessage, Author } from './types';
+import { Article, Comment, Event, SiteSettings, Subscriber, MediaAsset, Poll, Classified, LiveBlog, AppNotification, SupportMessage, Author, WebTV } from './types';
 import { cn, optimizeImage, getYoutubeId } from './lib/utils';
-import { AdminLogin, AdminDashboard, AdminEditor, ExportModal, PollEditor } from './components/Admin';
+import { AdminLogin, AdminDashboard, AdminEditor, ExportModal, PollEditor, LiveBlogEditor, WebTVEditor } from './components/Admin';
 import { AuthModal } from './components/AuthModal';
 import { AuthorProfile } from './components/AuthorProfile';
 import { AuthorsList } from './components/AuthorsList';
@@ -164,7 +164,7 @@ const HeroSlideshow = ({
             <img 
               src={optimizeImage(articles[currentIndex].image, 1200)} 
               alt={articles[currentIndex].title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover object-top"
               referrerPolicy="no-referrer"
               loading="eager"
               decoding="async"
@@ -307,7 +307,7 @@ const ArticleCard = ({ article, onClick, variant = 'horizontal', onBookmark, isB
             id={`article-img-hero-${article.id}`}
             src={optimizeImage(article.image, 600)} 
             alt={article.title}
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
             referrerPolicy="no-referrer"
             loading="lazy"
             decoding="async"
@@ -364,7 +364,7 @@ const ArticleCard = ({ article, onClick, variant = 'horizontal', onBookmark, isB
             id={`article-img-${variant}-${article.id}`}
             src={optimizeImage(article.image, variant === 'vertical' ? 500 : 200)} 
             alt={article.title}
-            className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+            className="w-full h-full object-cover object-top transition-transform duration-500 hover:scale-110"
             referrerPolicy="no-referrer"
             loading="lazy"
             decoding="async"
@@ -655,56 +655,55 @@ const ArticleCarousel = ({
 
 const EventSection = ({ events, onEventClick, onSeeAll }: { events: Event[], onEventClick: (e: Event) => void, onSeeAll: () => void }) => {
   return (
-    <section className="py-20 border-t border-slate-100">
-      <div className="flex items-center justify-between mb-10">
+    <section className="py-12 border-t border-slate-100">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="font-black text-3xl md:text-4xl tracking-tighter">Agenda Culturel</h2>
-          <p className="text-slate-500 mt-2">Les événements à ne pas manquer</p>
+          <h2 className="font-black text-xl md:text-2xl tracking-tighter uppercase">Agenda</h2>
         </div>
         <button 
           onClick={onSeeAll}
-          className="text-primary font-bold flex items-center gap-2 group"
+          className="text-primary font-bold text-xs flex items-center gap-2 group uppercase tracking-widest"
         >
-          Voir tout l'agenda <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+          Voir tout <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
         </button>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="flex items-start gap-4 overflow-x-auto pb-6 no-scrollbar -mx-4 px-4 touch-pan-x snap-x">
         {events.map((event) => (
           <motion.div 
             key={event.id}
             id={`event-card-home-${event.id}`}
-            whileHover={{ y: -10 }}
+            whileHover={{ y: -5 }}
             onClick={() => onEventClick(event)}
-            className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100 cursor-pointer group"
+            className="w-[200px] flex-shrink-0 bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 cursor-pointer group snap-start"
           >
-            <div className="aspect-[4/5] relative overflow-hidden bg-slate-100">
+            <div className="relative overflow-hidden bg-slate-50">
               {event.image && (
                 <img 
                   id={`event-img-home-${event.id}`}
-                  src={optimizeImage(event.image, 500)} 
+                  src={optimizeImage(event.image, 400, 'contain')} 
                   alt={event.title} 
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  className="w-full h-auto group-hover:scale-105 transition-transform duration-500"
                   referrerPolicy="no-referrer"
                   loading="lazy"
                   decoding="async"
                 />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-              <div className="absolute bottom-4 left-4 right-4">
-                <span className="bg-primary text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-widest mb-2 inline-block">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+              <div className="absolute bottom-3 left-3 right-3">
+                <span className="bg-primary text-white text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest mb-1 inline-block">
                   {event.category}
                 </span>
-                <h3 className="text-white font-bold text-lg leading-tight">{event.title}</h3>
+                <h3 className="text-white font-bold text-xs leading-tight line-clamp-1">{event.title}</h3>
               </div>
             </div>
-            <div className="p-5 space-y-3">
-              <div className="flex items-center gap-2 text-xs text-slate-500 font-bold">
-                <Calendar size={14} className="text-primary" />
+            <div className="p-3 space-y-2">
+              <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold italic">
+                <Calendar size={12} className="text-primary" />
                 {safeFormatDate(event.date, 'dd MMM yyyy')}
               </div>
-              <div className="flex items-center gap-2 text-xs text-slate-500 font-bold">
-                <Map size={14} className="text-primary" />
+              <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold truncate">
+                <Map size={12} className="text-primary" />
                 {event.location}
               </div>
             </div>
@@ -764,7 +763,7 @@ const EventDetailView = ({ event, onBack }: { event: Event, onBack: () => void }
             <div className="w-full rounded-3xl overflow-hidden shadow-2xl bg-slate-900/5">
               <img 
                 id={`event-detail-img-${event.id}`}
-                src={optimizeImage(event.image, 1200)} 
+                src={optimizeImage(event.image, 1200, 'contain')} 
                 alt={event.title}
                 className="w-full h-auto max-h-[80vh] object-contain mx-auto block"
                 referrerPolicy="no-referrer"
@@ -1018,7 +1017,7 @@ const ClassifiedsView = ({ classifieds, onBack, onAddClick }: { classifieds: Cla
           <div key={item.id} className="bg-white rounded-[40px] overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
             <div className="aspect-[4/3] relative overflow-hidden bg-slate-100">
                {item.imageUrl && (
-                 <img src={item.imageUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
+                 <img src={item.imageUrl} className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
                )}
                <div className="absolute top-4 left-4">
                  <Badge category={item.category}>{item.category}</Badge>
@@ -1173,9 +1172,7 @@ const PollCard = ({ poll, onVote, hasVoted }: { poll: Poll, onVote: (optionId: s
   );
 };
 
-const WebTVView = ({ articles, onArticleClick }: { articles: Article[], onArticleClick: (a: Article) => void }) => {
-  const videoArticles = articles.filter(a => a.video);
-
+const WebTVView = ({ videos, onVideoClick }: { videos: WebTV[], onVideoClick: (v: WebTV) => void }) => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-12 space-y-12">
       <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-b border-slate-100 pb-10">
@@ -1183,27 +1180,23 @@ const WebTVView = ({ articles, onArticleClick }: { articles: Article[], onArticl
           <h2 className="text-5xl font-display font-black tracking-tighter italic">WEB <span className="text-secondary">TV</span></h2>
           <p className="text-slate-500 font-medium">L'actualité décryptée en images et en vidéos.</p>
         </div>
-        <div className="flex bg-slate-100 p-1 rounded-2xl">
-          <button className="px-6 py-2 bg-white text-primary rounded-xl font-black text-xs shadow-sm uppercase tracking-widest">Récent</button>
-          <button className="px-6 py-2 text-slate-500 rounded-xl font-black text-xs uppercase tracking-widest">Populaire</button>
-        </div>
       </div>
 
-      {videoArticles.length > 0 ? (
+      {videos.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {videoArticles.map(article => (
+          {videos.map(video => (
             <motion.div 
-              key={article.id}
+              key={video.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               whileHover={{ y: -10 }}
               className="bg-white rounded-[40px] overflow-hidden shadow-xl border border-slate-100 group cursor-pointer"
-              onClick={() => onArticleClick(article)}
+              onClick={() => onVideoClick(video)}
             >
               <div className="relative aspect-video">
                 <img 
-                  src={optimizeImage(article.image || '', 800)} 
-                  alt={article.title}
+                  src={optimizeImage(video.thumbnail || '', 800)} 
+                  alt={video.title}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   referrerPolicy="no-referrer"
                 />
@@ -1213,14 +1206,14 @@ const WebTVView = ({ articles, onArticleClick }: { articles: Article[], onArticl
                   </div>
                 </div>
                 <div className="absolute top-4 left-4">
-                  <Badge category={article.category}>{article.category}</Badge>
+                  <Badge category={video.category}>{video.category}</Badge>
                 </div>
               </div>
               <div className="p-8 space-y-4">
-                <h3 className="font-display font-black text-xl leading-tight line-clamp-2 group-hover:text-primary transition-colors">{article.title}</h3>
+                <h3 className="font-display font-black text-xl leading-tight line-clamp-2 group-hover:text-primary transition-colors">{video.title}</h3>
                 <div className="flex items-center gap-2 text-xs text-slate-400 font-bold">
                   <Clock size={14} />
-                  <span>{safeFormatDate(article.date, 'dd MMMM yyyy')}</span>
+                  <span>{safeFormatDate(video.date, 'dd MMMM yyyy')}</span>
                 </div>
               </div>
             </motion.div>
@@ -1228,7 +1221,7 @@ const WebTVView = ({ articles, onArticleClick }: { articles: Article[], onArticl
         </div>
       ) : (
         <div className="text-center py-20 bg-slate-50 rounded-[40px] border-2 border-dotted border-slate-200">
-          <div className="flex flex-col items-center gap-4 opacity-50">
+           <div className="flex flex-col items-center gap-4 opacity-50">
             <MonitorOff size={64} className="text-slate-300" />
             <p className="font-black text-slate-400 uppercase tracking-widest">Aucune vidéo disponible pour le moment</p>
           </div>
@@ -1874,6 +1867,10 @@ export default function App() {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [adminPolls, setAdminPolls] = useState<Poll[]>([]);
   const [editingPoll, setEditingPoll] = useState<Poll | null>(null);
+  const [adminLiveBlogs, setAdminLiveBlogs] = useState<LiveBlog[]>([]);
+  const [editingLiveBlog, setEditingLiveBlog] = useState<LiveBlog | null>(null);
+  const [adminWebTV, setAdminWebTV] = useState<WebTV[]>([]);
+  const [editingWebTV, setEditingWebTV] = useState<WebTV | null>(null);
   const [isCloudLoaded, setIsCloudLoaded] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [activeCategory, setActiveCategory] = useState('À la une');
@@ -2006,6 +2003,8 @@ export default function App() {
   useEffect(() => {
     if (isAdminAuthenticated) {
       SupabaseService.getPolls().then(setAdminPolls).catch(console.error);
+      SupabaseService.getLiveBlogs().then(setAdminLiveBlogs).catch(console.error);
+      SupabaseService.getWebTV().then(setAdminWebTV).catch(console.error);
       SupabaseService.getAdminStats()
         .then(setAdminStats)
         .catch(err => {
@@ -2500,6 +2499,72 @@ export default function App() {
     }
   };
 
+  const handleSaveLiveBlog = async (blog: LiveBlog) => {
+    try {
+      await SupabaseService.saveLiveBlog(blog);
+      setAdminLiveBlogs(prev => {
+        const index = prev.findIndex(l => l.id === blog.id);
+        if (index >= 0) {
+          const newList = [...prev];
+          newList[index] = blog;
+          return newList;
+        }
+        return [blog, ...prev];
+      });
+      setEditingLiveBlog(null);
+      setActiveNotification({ message: "Direct enregistré !", type: 'success' });
+    } catch (error: any) {
+      console.error(error);
+      setActiveNotification({ message: `Erreur : ${error.message || "Impossible d'enregistrer le direct"}`, type: 'urgent' });
+    }
+  };
+
+  const handleDeleteLiveBlog = async (id: string) => {
+    if (confirm("Voulez-vous vraiment supprimer ce direct ?")) {
+      try {
+        await SupabaseService.deleteLiveBlog(id);
+        setAdminLiveBlogs(prev => prev.filter(l => l.id !== id));
+        setActiveNotification("Direct supprimé.");
+      } catch (error) {
+        console.error(error);
+        setActiveNotification("Erreur lors de la suppression.");
+      }
+    }
+  };
+
+  const handleSaveWebTV = async (video: WebTV) => {
+    try {
+      await SupabaseService.saveWebTV(video);
+      setAdminWebTV(prev => {
+        const index = prev.findIndex(v => v.id === video.id);
+        if (index >= 0) {
+          const newList = [...prev];
+          newList[index] = video;
+          return newList;
+        }
+        return [video, ...prev];
+      });
+      setEditingWebTV(null);
+      setActiveNotification({ message: "Vidéo enregistrée !", type: 'success' });
+    } catch (error: any) {
+      console.error(error);
+      setActiveNotification({ message: `Erreur : ${error.message || "Impossible d'enregistrer la vidéo"}`, type: 'urgent' });
+    }
+  };
+
+  const handleDeleteWebTV = async (id: string) => {
+    if (confirm("Voulez-vous vraiment supprimer cette vidéo ?")) {
+      try {
+        await SupabaseService.deleteWebTV(id);
+        setAdminWebTV(prev => prev.filter(v => v.id !== id));
+        setActiveNotification("Vidéo supprimée.");
+      } catch (error) {
+        console.error(error);
+        setActiveNotification("Erreur lors de la suppression.");
+      }
+    }
+  };
+
   const handleAdminLogout = async () => {
     try {
       await auth.signOut();
@@ -2925,11 +2990,11 @@ export default function App() {
     }
   };
 
-  const [visibleArticlesCount, setVisibleArticlesCount] = useState(4);
+  const [visibleArticlesCount, setVisibleArticlesCount] = useState(15);
   const loadingRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setVisibleArticlesCount(4);
+    setVisibleArticlesCount(15);
   }, [activeCategory]);
 
   useEffect(() => {
@@ -3376,7 +3441,7 @@ export default function App() {
         isDarkMode ? "bg-slate-950/80 border-slate-800" : "bg-white/80 border-slate-200"
       )}>
         <div className="max-w-7xl mx-auto px-4 h-24 md:h-28 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
             <button 
               onClick={() => setIsMenuOpen(true)}
               className="lg:hidden p-2 -ml-2 hover:bg-slate-100 rounded-full transition-colors"
@@ -3423,7 +3488,7 @@ export default function App() {
           </div>
 
           {/* Desktop Nav */}
-          <nav className="hidden lg:flex items-center gap-6 overflow-x-auto flex-nowrap no-scrollbar max-w-[50%]">
+          <nav className="hidden lg:flex items-center gap-4 overflow-x-auto flex-nowrap no-scrollbar flex-1 justify-center px-4">
             {categories.map(cat => (
               <button 
                 key={cat}
@@ -3474,7 +3539,7 @@ export default function App() {
             </button>
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
             <button 
               onClick={() => navigateTo('search')}
               className={cn("p-2 rounded-full transition-colors", isDarkMode ? "hover:bg-slate-800" : "hover:bg-slate-100")}
@@ -3760,72 +3825,24 @@ export default function App() {
               onBack={goHome} 
             />
           ) : currentView === 'live-blog' ? (
-            (() => {
-              const hasAccess = currentUser && currentUser.isPremium;
-              if (!hasAccess) {
-                return (
-                  <div className="max-w-4xl mx-auto py-20 text-center space-y-8">
-                     <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary">
-                        <Monitor size={48} />
-                     </div>
-                     <div className="space-y-4">
-                        <h2 className="text-4xl font-black italic tracking-tighter">SUIVI EN DIRECT RÉSERVÉ</h2>
-                        <p className="text-slate-500 max-w-md mx-auto font-bold">Le fil d'actualité en direct est réservé à nos membres Premium. Restez informé à la minute près.</p>
-                     </div>
-                     <button 
-                       onClick={() => setShowPremiumModal(true)}
-                       className="px-10 py-4 bg-primary text-white rounded-2xl font-black shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
-                     >
-                       S'ABONNER POUR ACCÉDER AU LIVE
-                     </button>
-                  </div>
-                );
-              }
-              return (
-                <LiveBlogView 
-                  blog={activeLiveBlog || (liveBlogs.length > 0 ? liveBlogs[0] : {
-                    id: 'mock-live',
-                    title: "Dernière Actualité",
-                    updates: [],
-                    status: 'live',
-                  } as LiveBlog)}
-                  onBack={goHome} 
-                />
-              );
-            })()
+            <LiveBlogView 
+              blog={activeLiveBlog || (liveBlogs.length > 0 ? liveBlogs[0] : {
+                id: 'mock-live',
+                title: "Dernière Actualité",
+                updates: [],
+                status: 'live',
+              } as LiveBlog)}
+              onBack={goHome} 
+            />
           ) : currentView === 'classifieds' ? (
-            (() => {
-              const hasAccess = currentUser && currentUser.isPremium;
-              if (!hasAccess) {
-                return (
-                  <div className="max-w-4xl mx-auto py-20 text-center space-y-8">
-                     <div className="w-24 h-24 bg-secondary/10 rounded-full flex items-center justify-center mx-auto text-secondary">
-                        <ShoppingBag size={48} />
-                     </div>
-                     <div className="space-y-4">
-                        <h2 className="text-4xl font-black italic tracking-tighter text-secondary">ESPACE PETITES ANNONCES</h2>
-                        <p className="text-slate-500 max-w-md mx-auto font-bold">Consultez et publiez des petites annonces exclusives. Uniquement pour les membres Premium.</p>
-                     </div>
-                     <button 
-                       onClick={() => setShowPremiumModal(true)}
-                       className="px-10 py-4 bg-secondary text-white rounded-2xl font-black shadow-lg shadow-secondary/20 hover:scale-105 transition-transform"
-                     >
-                       REJOINDRE LE CLUB PREMIUM
-                     </button>
-                  </div>
-                );
-              }
-              return (
-                <ClassifiedsView 
-                  classifieds={classifieds || []}
-                  onBack={goHome} 
-                  onAddClick={() => {
-                    if(!currentUser) handleUserLogin();
-                    else setShowClassifiedsModal(true);
-                  }}
-                />
-              );
-            })()
+            <ClassifiedsView 
+              classifieds={classifieds || []}
+              onBack={goHome} 
+              onAddClick={() => {
+                if(!currentUser) handleUserLogin();
+                else setShowClassifiedsModal(true);
+              }}
+            />
           ) : currentView === 'authors' ? (
             <AuthorsList 
               authors={MOCK_AUTHORS} 
@@ -3964,7 +3981,7 @@ export default function App() {
                   </div>
                   <GoogleAd className="mb-8" />
                   
-                  <div className="markdown-body text-lg leading-relaxed relative">
+                  <div className="markdown-body text-base md:text-lg leading-relaxed relative">
                     {(() => {
                       const isPremiumArticle = selectedArticle.isPremium;
                       const hasAccess = !isPremiumArticle || (currentUser && currentUser.isPremium);
@@ -4638,29 +4655,25 @@ export default function App() {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.4 }}
             >
-              {(() => {
-                const hasAccess = currentUser && currentUser.isPremium;
-                if (!hasAccess) {
-                  return (
-                    <div className="max-w-4xl mx-auto py-20 text-center space-y-8">
-                       <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto text-red-600">
-                          <Monitor size={48} />
-                       </div>
-                       <div className="space-y-4">
-                          <h2 className="text-4xl font-black italic tracking-tighter">WEB TV PREMIUM</h2>
-                          <p className="text-slate-500 max-w-md mx-auto font-bold">Accédez à nos exclusivités Web TV, interviews et reportages spéciaux en vidéo.</p>
-                       </div>
-                       <button 
-                         onClick={() => setShowPremiumModal(true)}
-                         className="px-10 py-4 bg-primary text-white rounded-2xl font-black shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
-                       >
-                         DEVENIR MEMBRE PREMIUM
-                       </button>
-                    </div>
-                  );
-                }
-                return <WebTVView articles={visibleArticles} onArticleClick={handleArticleClick} />;
-              })()}
+            <WebTVView videos={adminWebTV} onVideoClick={async (v) => {
+              const mockArticle: Article = {
+                  id: v.id,
+                  title: v.title,
+                  content: v.description,
+                  video: v.videoUrl,
+                  image: v.thumbnail,
+                  category: v.category,
+                  date: v.date,
+                  author: "Web TV",
+                  views: v.views,
+                  likes: 0,
+                  slug: v.id,
+                  excerpt: v.description.substring(0, 100),
+                  readingTime: "5 min",
+                  status: 'published'
+              };
+              handleArticleClick(mockArticle);
+            }} />
             </motion.div>
           ) : currentView === 'about' ? (
             <motion.div 
@@ -4914,13 +4927,13 @@ Dernière mise à jour : Avril 2026
                     onClick={() => handleEventClick(event)}
                     className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-slate-100 cursor-pointer group"
                   >
-                    <div className="aspect-[3/4] relative overflow-hidden bg-slate-100">
+                    <div className="relative overflow-hidden bg-slate-50">
                       {event.image && (
                         <img 
                           id={`event-card-img-all-${event.id}`}
-                          src={optimizeImage(event.image, 500)} 
+                          src={optimizeImage(event.image, 800, 'contain')} 
                           alt={event.title}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          className="w-full h-auto transition-transform duration-700 group-hover:scale-105"
                           referrerPolicy="no-referrer"
                           loading="lazy"
                           decoding="async"
@@ -5018,6 +5031,19 @@ Dernière mise à jour : Avril 2026
                   onSave={handleSaveEvent} 
                   onCancel={() => setEditingEvent(null)} 
                 />
+              ) : editingLiveBlog ? (
+                <LiveBlogEditor 
+                  blog={editingLiveBlog}
+                  onSave={handleSaveLiveBlog}
+                  onCancel={() => setEditingLiveBlog(null)}
+                />
+              ) : editingWebTV ? (
+                <WebTVEditor 
+                  video={editingWebTV}
+                  categories={siteSettings.categories}
+                  onSave={handleSaveWebTV}
+                  onCancel={() => setEditingWebTV(null)}
+                />
               ) : editingPoll ? (
                 <PollEditor 
                   poll={editingPoll}
@@ -5033,15 +5059,23 @@ Dernière mise à jour : Avril 2026
                   mediaLibrary={mediaLibrary}
                   settings={siteSettings}
                   polls={adminPolls}
+                  liveBlogs={adminLiveBlogs}
+                  webTV={adminWebTV}
                   onEditArticle={(a) => setEditingArticle(a)}
                   onEditEvent={(e) => setEditingEvent(e)}
                   onEditPoll={(p) => setEditingPoll(p)}
+                  onEditLiveBlog={(l) => setEditingLiveBlog(l)}
+                  onEditWebTV={(v) => setEditingWebTV(v)}
                   onCreateArticle={() => setEditingArticle({ id: crypto.randomUUID(), date: new Date().toISOString().split('T')[0] } as any)}
                   onCreateEvent={() => setEditingEvent({ id: crypto.randomUUID(), date: new Date().toISOString().split('T')[0] } as any)}
                   onCreatePoll={() => setEditingPoll({ id: crypto.randomUUID(), startDate: new Date().toISOString().split('T')[0], options: [{id: '1', text: '', votes: 0}, {id: '2', text: '', votes: 0}], active: true } as any)}
+                  onCreateLiveBlog={() => setEditingLiveBlog({ id: crypto.randomUUID(), title: '', updates: [], status: 'live', createdAt: new Date().toISOString() } as any)}
+                  onCreateWebTV={() => setEditingWebTV({ id: crypto.randomUUID(), title: '', description: '', videoUrl: '', thumbnail: '', category: 'Web TV', date: new Date().toISOString(), views: 0 } as any)}
                   onDeleteArticle={handleDeleteArticle}
                   onDeleteEvent={handleDeleteEvent}
                   onDeletePoll={handleDeletePoll}
+                  onDeleteLiveBlog={handleDeleteLiveBlog}
+                  onDeleteWebTV={handleDeleteWebTV}
                   onDeleteComment={handleDeleteComment}
                   onDeleteSubscriber={handleDeleteSubscriber}
                   onDeleteMedia={handleDeleteMediaAsset}

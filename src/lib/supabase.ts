@@ -12,7 +12,9 @@ import {
   SupportMessage,
   UserProfile,
   Classified,
-  LiveBlog
+  LiveBlog,
+  LiveUpdate,
+  WebTV
 } from '../types';
 
 export const supabase = createClient(
@@ -480,6 +482,47 @@ export const SupabaseService = {
     const { data, error } = await supabase.from('live_blogs').select('*').order('createdAt', { ascending: false });
     if (error) return [];
     return data as LiveBlog[];
+  },
+
+  async saveLiveBlog(blog: LiveBlog): Promise<void> {
+    if (isPlaceholder) return;
+    const { error } = await supabase.from('live_blogs').upsert(blog);
+    if (error) throw error;
+  },
+
+  async deleteLiveBlog(id: string): Promise<void> {
+    if (isPlaceholder) return;
+    const { error } = await supabase.from('live_blogs').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  // Web TV
+  async getWebTV(): Promise<WebTV[]> {
+    if (isPlaceholder) return [];
+    const { data, error } = await supabase.from('web_tv').select('*').order('date', { ascending: false });
+    if (error) return [];
+    return data as WebTV[];
+  },
+
+  async saveWebTV(entry: WebTV): Promise<void> {
+    if (isPlaceholder) return;
+    const { error } = await supabase.from('web_tv').upsert(entry);
+    if (error) throw error;
+  },
+
+  async deleteWebTV(id: string): Promise<void> {
+    if (isPlaceholder) return;
+    const { error } = await supabase.from('web_tv').delete().eq('id', id);
+    if (error) throw error;
+  },
+
+  async addLiveUpdate(blogId: string, update: LiveUpdate): Promise<void> {
+    if (isPlaceholder) return;
+    const { data: blog } = await supabase.from('live_blogs').select('updates').eq('id', blogId).single();
+    if (blog) {
+      const updates = [...(blog.updates || []), update];
+      await supabase.from('live_blogs').update({ updates }).eq('id', blogId);
+    }
   },
 
   async incrementArticleViews(articleId: string): Promise<void> {

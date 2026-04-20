@@ -54,8 +54,8 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Article, Event, SiteSettings, Comment, Subscriber, MediaAsset, SupportMessage, Poll, UserProfile } from '../types';
-import { cn } from '../lib/utils';
+import { Article, Event, SiteSettings, Comment, Subscriber, MediaAsset, SupportMessage, Poll, UserProfile, LiveBlog, LiveUpdate, WebTV } from '../types';
+import { cn, optimizeImage } from '../lib/utils';
 import ReactMarkdown from 'react-markdown';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -259,7 +259,15 @@ export const AdminDashboard = ({
   onBlockUser,
   onSaveSettings,
   onLogout,
-  onGenerateCode 
+  onGenerateCode,
+  liveBlogs,
+  onEditLiveBlog,
+  onCreateLiveBlog,
+  onDeleteLiveBlog,
+  webTV,
+  onEditWebTV,
+  onCreateWebTV,
+  onDeleteWebTV
 }: { 
   articles: Article[], 
   events: Event[],
@@ -268,16 +276,24 @@ export const AdminDashboard = ({
   mediaLibrary: MediaAsset[],
   settings: SiteSettings,
   polls: Poll[],
+  liveBlogs: LiveBlog[],
+  webTV: WebTV[],
   stats?: any,
   onEditArticle: (a: Article) => void,
   onEditEvent: (e: Event) => void,
   onEditPoll: (p: Poll) => void,
+  onEditLiveBlog: (l: LiveBlog) => void,
+  onEditWebTV: (v: WebTV) => void,
   onCreateArticle: () => void,
   onCreateEvent: () => void,
   onCreatePoll: () => void,
+  onCreateLiveBlog: () => void,
+  onCreateWebTV: () => void,
   onDeleteArticle: (id: string) => void,
   onDeleteEvent: (id: string) => void,
   onDeletePoll: (id: string) => void,
+  onDeleteLiveBlog: (id: string) => void,
+  onDeleteWebTV: (id: string) => void,
   onDeleteComment: (id: string) => void,
   onDeleteSubscriber: (id: string) => void,
   onDeleteMedia: (id: string) => void,
@@ -286,7 +302,7 @@ export const AdminDashboard = ({
   onLogout: () => void,
   onGenerateCode: () => void
 }) => {
-  const [activeTab, setActiveTab] = useState<'articles' | 'events' | 'comments' | 'subscribers' | 'media' | 'settings' | 'analytics' | 'alerts' | 'support' | 'polls' | 'premium' | 'payments'>(
+  const [activeTab, setActiveTab] = useState<'articles' | 'events' | 'comments' | 'subscribers' | 'media' | 'settings' | 'analytics' | 'alerts' | 'support' | 'polls' | 'premium' | 'payments' | 'live-blog' | 'web-tv'>(
     (localStorage.getItem('akwaba_admin_tab') as any) || 'articles'
   );
 
@@ -452,6 +468,15 @@ export const AdminDashboard = ({
     c.content.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const filteredLiveBlogs = liveBlogs.filter(l => 
+    l.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredWebTV = webTV.filter(v =>
+    v.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    v.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const filteredSubscribers = subscribers.filter(s => s.email.toLowerCase().includes(searchTerm.toLowerCase()));
   const filteredMedia = mediaLibrary.filter(m => m.url.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -474,17 +499,19 @@ export const AdminDashboard = ({
           >
             <Copy size={18} /> Export Code
           </button>
-          {(activeTab === 'articles' || activeTab === 'events' || activeTab === 'polls') && (
+          {(activeTab === 'articles' || activeTab === 'events' || activeTab === 'polls' || activeTab === 'live-blog' || activeTab === 'web-tv') && (
             <button 
               onClick={() => {
                 if (activeTab === 'articles') onCreateArticle();
                 else if (activeTab === 'events') onCreateEvent();
                 else if (activeTab === 'polls') onCreatePoll();
+                else if (activeTab === 'live-blog') onCreateLiveBlog();
+                else if (activeTab === 'web-tv') onCreateWebTV();
               }}
               className="px-5 py-3 bg-primary text-white font-bold rounded-2xl hover:bg-primary/90 transition-all flex items-center gap-2 text-sm shadow-lg shadow-primary/20"
             >
               <Plus size={18} /> 
-              {activeTab === 'articles' ? 'Nouvel Article' : activeTab === 'events' ? 'Nouvel Événement' : 'Nouveau Sondage'}
+              {activeTab === 'articles' ? 'Nouvel Article' : activeTab === 'events' ? 'Nouvel Événement' : activeTab === 'polls' ? 'Nouveau Sondage' : activeTab === 'web-tv' ? 'Nouvelle Vidéo' : 'Nouveau Direct'}
             </button>
           )}
           <button 
@@ -523,6 +550,24 @@ export const AdminDashboard = ({
           )}
         >
           Sondages
+        </button>
+        <button 
+          onClick={() => setActiveTab('live-blog')}
+          className={cn(
+            "px-6 py-4 font-black transition-all border-b-2 shrink-0 text-sm",
+            activeTab === 'live-blog' ? "border-primary text-primary" : "border-transparent text-slate-400 hover:text-slate-600"
+          )}
+        >
+          Direct
+        </button>
+        <button 
+          onClick={() => setActiveTab('web-tv')}
+          className={cn(
+            "px-6 py-4 font-black transition-all border-b-2 shrink-0 text-sm",
+            activeTab === 'web-tv' ? "border-primary text-primary" : "border-transparent text-slate-400 hover:text-slate-600"
+          )}
+        >
+          Web TV
         </button>
         <button 
           onClick={() => setActiveTab('comments')}
@@ -1390,6 +1435,79 @@ export const AdminDashboard = ({
                 </ul>
               </div>
             </motion.div>
+          ) : activeTab === 'web-tv' ? (
+            <motion.div 
+              key="web-tv"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="bg-white rounded-[40px] border border-slate-100 shadow-2xl overflow-hidden"
+            >
+              <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
+                <h3 className="text-xl font-black italic">Gestion Web TV</h3>
+                <span className="text-[10px] font-black bg-primary/10 text-primary px-3 py-1 rounded-full uppercase tracking-widest">
+                  {filteredWebTV.length} Vidéos
+                </span>
+              </div>
+
+              <div className="divide-y divide-slate-50">
+                <div className="grid grid-cols-12 px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50">
+                  <div className="col-span-5">Vidéo</div>
+                  <div className="col-span-3 text-center">Catégorie</div>
+                  <div className="col-span-2 text-center">Date</div>
+                  <div className="col-span-2 text-right">Actions</div>
+                </div>
+
+                {filteredWebTV.map(video => (
+                  <div key={video.id} className="grid grid-cols-12 px-8 py-6 items-center hover:bg-slate-50/50 transition-all group">
+                    <div className="col-span-5 flex items-center gap-4">
+                      <div className="relative w-24 h-14 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0 group-hover:scale-105 transition-transform duration-500">
+                        <img src={video.thumbnail} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                          <Youtube size={16} className="text-white" />
+                        </div>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-black text-slate-900 truncate text-sm">{video.title}</p>
+                        <p className="text-[10px] text-slate-400 font-bold truncate tracking-widest uppercase">
+                          {video.views} vues
+                        </p>
+                      </div>
+                    </div>
+                    <div className="col-span-3 text-center">
+                      <span className="text-[10px] font-black text-primary bg-primary/5 px-3 py-1 rounded-full uppercase tracking-widest">
+                        {video.category}
+                      </span>
+                    </div>
+                    <div className="col-span-2 text-center">
+                      <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-lg">
+                        {format(new Date(video.date), 'dd/MM/yyyy')}
+                      </span>
+                    </div>
+                    <div className="col-span-2 flex justify-end gap-2">
+                       <button 
+                        onClick={() => onEditWebTV(video)}
+                        className="p-3 text-slate-400 hover:text-slate-900 hover:bg-white rounded-2xl transition-all shadow-sm"
+                      >
+                        <Edit3 size={18}/>
+                      </button>
+                      <button 
+                        onClick={() => onDeleteWebTV(video.id)}
+                        className="p-3 text-slate-400 hover:text-red-500 hover:bg-white rounded-2xl transition-all shadow-sm"
+                      >
+                        <Trash size={18}/>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {filteredWebTV.length === 0 && (
+                  <div className="p-20 text-center space-y-4">
+                    <Video size={48} className="text-slate-200 mx-auto" />
+                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest italic">Aucune vidéo Web TV trouvée.</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
           ) : activeTab === 'analytics' ? (
             <motion.div 
               key="analytics"
@@ -1702,6 +1820,42 @@ export const AdminDashboard = ({
                       </button>
                       <button 
                         onClick={() => onDeleteEvent(event.id)}
+                        className="p-2 bg-slate-50 text-slate-400 rounded-lg hover:bg-red-50 hover:text-red-500 transition-all opacity-70 lg:opacity-0 lg:group-hover:opacity-100"
+                      >
+                        <Trash size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {activeTab === 'live-blog' && filteredLiveBlogs.map(blog => (
+                  <div key={blog.id} className="grid grid-cols-12 px-6 py-4 items-center hover:bg-slate-50/50 transition-colors group">
+                    <div className="col-span-6 flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                        <TrendingUp size={24} />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900 leading-tight line-clamp-1">{blog.title}</h4>
+                        <p className="text-[10px] text-slate-400 font-medium">{blog.updates.length} mises à jour</p>
+                      </div>
+                    </div>
+                    <div className="col-span-2 text-xs font-black uppercase">
+                       <span className={blog.status === 'live' ? "text-emerald-500" : "text-slate-400"}>
+                         {blog.status === 'live' ? "● En Direct" : "Terminé"}
+                       </span>
+                    </div>
+                    <div className="col-span-2 text-xs text-slate-500 font-mono">
+                      {blog.createdAt.split('T')[0]}
+                    </div>
+                    <div className="col-span-2 flex justify-end gap-2 pr-2">
+                      <button 
+                        onClick={() => onEditLiveBlog(blog)}
+                        className="p-2 bg-slate-50 text-slate-400 rounded-lg hover:bg-primary/10 hover:text-primary transition-all"
+                      >
+                        <Edit3 size={16} />
+                      </button>
+                      <button 
+                        onClick={() => onDeleteLiveBlog(blog.id)}
                         className="p-2 bg-slate-50 text-slate-400 rounded-lg hover:bg-red-50 hover:text-red-500 transition-all opacity-70 lg:opacity-0 lg:group-hover:opacity-100"
                       >
                         <Trash size={16} />
@@ -2028,8 +2182,18 @@ export const AdminEditor = ({
             <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-xl min-h-[600px] animate-in fade-in slide-in-from-bottom-2">
               <h1 className="text-4xl font-black mb-6">{formData.title || "Titre de l'élément"}</h1>
               {formData.image && (
-                <div className="aspect-video rounded-2xl overflow-hidden mb-8">
-                  <img src={formData.image} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                <div className={cn(
+                  "rounded-2xl overflow-hidden mb-8 bg-slate-100",
+                  type === 'article' && "aspect-video"
+                )}>
+                  <img 
+                    src={optimizeImage(formData.image, 800, type === 'event' ? 'contain' : 'crop')} 
+                    className={cn(
+                      "w-full",
+                      type === 'article' ? "h-full object-cover object-top" : "h-auto"
+                    )} 
+                    referrerPolicy="no-referrer" 
+                  />
                 </div>
               )}
               {formData.video && (
@@ -2556,6 +2720,334 @@ const PremiumUserList = ({ onUpgrade, onUpdateStatus }: { onUpgrade: (uid: strin
         ))
       )}
     </>
+  );
+};
+
+const LiveUpdateEditor = ({ update, onSave, onCancel }: { update: Partial<LiveUpdate>, onSave: (u: LiveUpdate) => void, onCancel: () => void }) => {
+  const [formData, setFormData] = useState<LiveUpdate>({
+    id: update.id || Date.now().toString(),
+    content: update.content || '',
+    date: update.date || new Date().toISOString(),
+    type: update.type || 'info', // Default to info
+    imageUrl: update.imageUrl || '',
+    videoUrl: update.videoUrl || '',
+    author: update.author || 'Rédaction'
+  });
+
+  return (
+    <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100 space-y-6 relative overflow-hidden African-pattern-light">
+      <div className="flex items-center justify-between relative z-10">
+         <h5 className="text-[10px] font-black uppercase tracking-widest text-primary italic">Nouvelle Mise à Jour</h5>
+         <div className="flex gap-2">
+            <button onClick={onCancel} className="p-2 text-slate-400 hover:text-red-500 transition-colors"><X size={18}/></button>
+            <button onClick={() => onSave(formData)} className="p-2 bg-primary text-white rounded-lg shadow-lg shadow-primary/20 hover:scale-105 transition-all"><Check size={18}/></button>
+         </div>
+      </div>
+
+      <div className="space-y-4 relative z-10">
+        <textarea 
+          placeholder="Détail de l'information en direct..."
+          className="w-full bg-white rounded-2xl p-4 text-sm font-medium border-none outline-none focus:ring-4 focus:ring-primary/10 min-h-[120px]"
+          value={formData.content}
+          onChange={e => setFormData({...formData, content: e.target.value})}
+        />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+           <div className="space-y-1">
+              <label className="text-[9px] font-black uppercase text-slate-400 px-2">Lien Image (Optionnel)</label>
+              <div className="relative">
+                <Camera className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" size={12} />
+                <input 
+                  type="text"
+                  placeholder="https://... (image)"
+                  className="w-full bg-white rounded-xl pl-9 pr-4 py-2.5 text-xs font-bold outline-none border border-slate-100"
+                  value={formData.imageUrl}
+                  onChange={e => setFormData({...formData, imageUrl: e.target.value, type: e.target.value ? 'media' : formData.type})}
+                />
+              </div>
+           </div>
+           <div className="space-y-1">
+              <label className="text-[9px] font-black uppercase text-slate-400 px-2">Lien Vidéo YouTube (Optionnel)</label>
+              <div className="relative">
+                <Youtube className="absolute left-3 top-1/2 -translate-y-1/2 text-red-500" size={12} />
+                <input 
+                  type="text"
+                  placeholder="https://youtube.com/..."
+                  className="w-full bg-white rounded-xl pl-9 pr-4 py-2.5 text-xs font-bold outline-none border border-slate-100"
+                  value={formData.videoUrl}
+                  onChange={e => setFormData({...formData, videoUrl: e.target.value, type: e.target.value ? 'media' : formData.type})}
+                />
+              </div>
+           </div>
+        </div>
+
+        <div className="flex bg-white/50 p-1 rounded-xl w-fit">
+           {(['info', 'urgent'] as const).map(t => (
+             <button 
+              key={t}
+              onClick={() => setFormData({...formData, type: t})}
+              className={cn(
+                "px-4 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all",
+                formData.type === t ? "bg-slate-900 text-white" : "text-slate-400"
+              )}
+             >
+               {t === 'info' ? 'Info' : 'Urgent'}
+             </button>
+           ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const LiveBlogEditor = ({ blog, onSave, onCancel }: { blog: Partial<LiveBlog>, onSave: (b: LiveBlog) => void, onCancel: () => void }) => {
+  const [formData, setFormData] = useState<LiveBlog>({
+    id: blog.id || Date.now().toString(),
+    articleId: blog.articleId || '',
+    title: blog.title || '',
+    updates: blog.updates || [],
+    status: blog.status || 'live',
+    createdAt: blog.createdAt || new Date().toISOString()
+  });
+  const [isAddingUpdate, setIsAddingUpdate] = useState(false);
+
+  return (
+    <div className="max-w-4xl mx-auto py-10 px-4 space-y-10">
+       <div className="flex items-center justify-between">
+        <button 
+          onClick={onCancel}
+          className="flex items-center gap-2 text-slate-400 hover:text-slate-900 font-bold transition-all text-sm"
+        >
+          <ArrowLeft size={18} /> Revenir au tableau de bord
+        </button>
+        <button 
+          onClick={() => onSave(formData)}
+          className="px-8 py-3 bg-primary text-white font-black rounded-2xl hover:bg-primary/90 transition-all shadow-xl shadow-primary/20 flex items-center gap-2"
+        >
+          <Save size={20} /> Enregistrer le Direct
+        </button>
+      </div>
+
+      <div className="bg-white rounded-[40px] border border-slate-100 shadow-2xl p-10 space-y-12 African-pattern">
+        <div className="space-y-4">
+          <label className="text-xs font-black uppercase tracking-widest text-primary italic px-2 flex items-center gap-2">
+            <TrendingUp size={16} /> Titre de l'événement en direct
+          </label>
+          <input 
+            type="text"
+            value={formData.title}
+            onChange={(e) => setFormData({...formData, title: e.target.value})}
+            placeholder="Ex: Élections Présidentielles 2026..."
+            className="w-full bg-slate-50 border-none rounded-3xl px-8 py-6 text-2xl font-black outline-none focus:ring-4 focus:ring-primary/10 transition-all shadow-sm"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+           <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase text-slate-400 px-2">Statut du Direct</label>
+              <div className="flex bg-slate-50 p-1 rounded-2xl">
+                 <button 
+                  onClick={() => setFormData({...formData, status: 'live'})}
+                  className={cn("flex-1 py-3 rounded-xl text-xs font-black uppercase transition-all", formData.status === 'live' ? "bg-emerald-500 text-white shadow-lg" : "text-slate-400")}
+                 >
+                   En Direct
+                 </button>
+                 <button 
+                  onClick={() => setFormData({...formData, status: 'ended'})}
+                  className={cn("flex-1 py-3 rounded-xl text-xs font-black uppercase transition-all", formData.status === 'ended' ? "bg-slate-900 text-white shadow-lg" : "text-slate-400")}
+                 >
+                   Terminé
+                 </button>
+              </div>
+           </div>
+           <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase text-slate-400 px-2">Date d'initialisation</label>
+              <input 
+                type="date" 
+                value={formData.createdAt.split('T')[0]} 
+                onChange={e => setFormData({...formData, createdAt: new Date(e.target.value).toISOString()})}
+                className="w-full bg-slate-50 rounded-2xl px-6 py-3 text-xs font-bold outline-none border border-slate-100"
+              />
+           </div>
+        </div>
+
+        <div className="space-y-8 pt-8 border-t border-slate-50">
+           <div className="flex items-center justify-between">
+              <h4 className="text-xl font-black italic">Fil d'actualité ({formData.updates.length})</h4>
+              <button 
+                onClick={() => setIsAddingUpdate(true)}
+                className="bg-primary/10 text-primary px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all flex items-center gap-2"
+              >
+                <Plus size={14} /> Ajouter une Mise à Jour
+              </button>
+           </div>
+
+           <div className="space-y-6">
+              {isAddingUpdate && (
+                <LiveUpdateEditor 
+                  update={{}} 
+                  onCancel={() => setIsAddingUpdate(false)}
+                  onSave={(update) => {
+                    setFormData({...formData, updates: [update, ...formData.updates]});
+                    setIsAddingUpdate(false);
+                  }}
+                />
+              )}
+
+              {formData.updates.map((update, idx) => (
+                <div key={update.id} className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex gap-6 items-start relative group">
+                   <div className="flex flex-col items-center gap-2 pt-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                      <div className="w-0.5 flex-1 bg-slate-100" />
+                   </div>
+                   <div className="flex-1 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] font-black text-primary uppercase tracking-widest bg-primary/5 px-2 py-0.5 rounded">
+                          {format(new Date(update.date), 'HH:mm')} • {update.type.toUpperCase()}
+                        </span>
+                        <button 
+                          onClick={() => {
+                            if(confirm("Supprimer cette mise à jour ?")) {
+                              setFormData({
+                                ...formData,
+                                updates: formData.updates.filter(u => u.id !== update.id)
+                              });
+                            }
+                          }}
+                          className="p-2 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash size={16}/>
+                        </button>
+                      </div>
+                      <p className="text-sm text-slate-700 leading-relaxed font-medium">{update.content}</p>
+                      <div className="flex gap-4">
+                        {update.imageUrl && <img src={update.imageUrl} className="w-20 h-20 rounded-xl object-cover border border-slate-200" referrerPolicy="no-referrer" />}
+                        {update.videoUrl && (
+                          <div className="w-20 h-20 rounded-xl bg-slate-900 flex items-center justify-center text-red-500 border border-slate-200">
+                            <Youtube size={24} />
+                          </div>
+                        )}
+                      </div>
+                   </div>
+                </div>
+              ))}
+
+              {formData.updates.length === 0 && !isAddingUpdate && (
+                <div className="py-12 bg-slate-50 rounded-3xl text-center space-y-4 border border-dashed border-slate-200">
+                   <TrendingUp className="mx-auto text-slate-200" size={32} />
+                   <p className="text-xs text-slate-400 font-bold uppercase tracking-widest italic">Le fil est vide. Commencez à publier.</p>
+                </div>
+              )}
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const WebTVEditor = ({ video, onSave, onCancel, categories }: { video: Partial<WebTV>, onSave: (v: WebTV) => void, onCancel: () => void, categories: string[] }) => {
+  const [formData, setFormData] = useState<WebTV>({
+    id: video.id || Date.now().toString(),
+    title: video.title || '',
+    description: video.description || '',
+    videoUrl: video.videoUrl || '',
+    thumbnail: video.thumbnail || '',
+    category: video.category || categories[0] || 'Web TV',
+    date: video.date || new Date().toISOString(),
+    views: video.views || 0,
+    isPremium: video.isPremium || false
+  });
+
+  return (
+    <div className="max-w-4xl mx-auto py-10 px-4 space-y-10">
+       <div className="flex items-center justify-between">
+        <button 
+          onClick={onCancel}
+          className="flex items-center gap-2 text-slate-400 hover:text-slate-900 font-bold transition-all text-sm"
+        >
+          <ArrowLeft size={18} /> Revenir au tableau de bord
+        </button>
+        <button 
+          onClick={() => onSave(formData)}
+          className="px-8 py-3 bg-primary text-white font-black rounded-2xl hover:bg-primary/90 transition-all shadow-xl shadow-primary/20 flex items-center gap-2"
+        >
+          <Save size={20} /> Enregistrer la Vidéo
+        </button>
+      </div>
+
+      <div className="bg-white rounded-[40px] border border-slate-100 shadow-2xl p-10 space-y-12 African-pattern">
+        <div className="space-y-4">
+          <label className="text-xs font-black uppercase tracking-widest text-primary italic px-2 flex items-center gap-2">
+            <Video size={16} /> Titre de la vidéo
+          </label>
+          <input 
+            type="text"
+            value={formData.title}
+            onChange={(e) => setFormData({...formData, title: e.target.value})}
+            placeholder="Ex: Interview exclusive du Ministre..."
+            className="w-full bg-slate-50 border-none rounded-3xl px-8 py-6 text-2xl font-black outline-none focus:ring-4 focus:ring-primary/10 transition-all shadow-sm"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+           <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase text-slate-400 px-2">Catégorie</label>
+              <select 
+                value={formData.category}
+                onChange={e => setFormData({...formData, category: e.target.value})}
+                className="w-full bg-slate-50 rounded-2xl px-6 py-3 text-xs font-bold outline-none border border-slate-100"
+              >
+                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                <option value="Web TV">Web TV</option>
+              </select>
+           </div>
+           <div className="space-y-3">
+              <label className="text-[10px] font-black uppercase text-slate-400 px-2">Date de publication</label>
+              <input 
+                type="date" 
+                value={formData.date.split('T')[0]} 
+                onChange={e => setFormData({...formData, date: new Date(e.target.value).toISOString()})}
+                className="w-full bg-slate-50 rounded-2xl px-6 py-3 text-xs font-bold outline-none border border-slate-100"
+              />
+           </div>
+        </div>
+
+        <div className="space-y-6">
+           <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase text-slate-400 px-2 flex items-center gap-2">
+                <Youtube size={14} className="text-red-500" /> Lien Vidéo YouTube (ou autre)
+              </label>
+              <input 
+                type="text"
+                placeholder="https://www.youtube.com/watch?v=..."
+                className="w-full bg-slate-50 rounded-2xl px-6 py-4 text-sm font-bold outline-none border border-slate-100"
+                value={formData.videoUrl}
+                onChange={e => setFormData({...formData, videoUrl: e.target.value})}
+              />
+           </div>
+           <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase text-slate-400 px-2">Lien Miniature (Vignette)</label>
+              <input 
+                type="text"
+                placeholder="https://... (image)"
+                className="w-full bg-slate-50 rounded-2xl px-6 py-4 text-sm font-bold outline-none border border-slate-100"
+                value={formData.thumbnail}
+                onChange={e => setFormData({...formData, thumbnail: e.target.value})}
+              />
+           </div>
+        </div>
+
+        <div className="space-y-4">
+           <label className="text-[10px] font-black uppercase text-slate-400 px-2 italic">Description de la vidéo</label>
+           <textarea 
+            placeholder="Détails sur le contenu de cette émission..."
+            className="w-full bg-slate-50 border-none rounded-[32px] px-8 py-6 text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 transition-all min-h-[150px]"
+            value={formData.description}
+            onChange={e => setFormData({...formData, description: e.target.value})}
+          />
+        </div>
+      </div>
+    </div>
   );
 };
 

@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function optimizeImage(url: string | undefined, width: number = 800) {
+export function optimizeImage(url: string | undefined, width: number = 800, fit: 'crop' | 'contain' | 'max' = 'crop') {
   if (!url) return '';
   if (url.includes('unsplash.com')) {
     try {
@@ -13,7 +13,12 @@ export function optimizeImage(url: string | undefined, width: number = 800) {
       urlObj.searchParams.set('w', width.toString());
       urlObj.searchParams.set('q', '75');
       urlObj.searchParams.set('auto', 'format');
-      urlObj.searchParams.set('fit', 'crop');
+      urlObj.searchParams.set('fit', fit);
+      if (fit === 'crop') {
+        urlObj.searchParams.set('crop', 'faces,focalpoint');
+      } else {
+        urlObj.searchParams.delete('crop');
+      }
       return urlObj.toString();
     } catch (e) {
       return url;

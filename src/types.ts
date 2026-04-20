@@ -209,7 +209,20 @@ export interface LiveUpdate {
   date: string;
   type: 'info' | 'urgent' | 'media';
   imageUrl?: string;
+  videoUrl?: string;
   author: string;
+}
+
+export interface WebTV {
+  id: string;
+  title: string;
+  description: string;
+  videoUrl: string;
+  thumbnail: string;
+  category: string;
+  date: string;
+  views: number;
+  isPremium?: boolean;
 }
 
 export interface Classified {
