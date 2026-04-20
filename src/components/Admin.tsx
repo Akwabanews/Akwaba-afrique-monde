@@ -128,18 +128,18 @@ export const PollEditor = ({ poll, onSave, onCancel }: { poll: Partial<Poll>, on
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-4 space-y-8">
-       <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <button 
           onClick={onCancel}
-          className="flex items-center gap-2 text-slate-400 hover:text-slate-900 font-bold transition-all text-sm"
+          className="flex items-center gap-2 text-slate-400 hover:text-slate-900 font-black transition-all text-sm uppercase tracking-widest"
         >
-          <ArrowLeft size={18} /> Revenir au tableau de bord
+          <ArrowLeft size={18} /> RETOUR
         </button>
         <button 
           onClick={() => onSave(formData)}
-          className="px-8 py-3 bg-primary text-white font-black rounded-2xl hover:bg-primary/90 transition-all shadow-xl shadow-primary/20 flex items-center gap-2"
+          className="px-8 py-4 bg-primary text-white font-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest border-2 border-white"
         >
-          <Save size={20} /> Enregistrer le Sondage
+          <Save size={18} /> ENREGISTRER
         </button>
       </div>
 
@@ -482,22 +482,22 @@ export const AdminDashboard = ({
 
   return (
     <div className="max-w-6xl mx-auto py-10 px-4 space-y-10">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-primary rounded-2xl text-white shadow-lg shadow-primary/20">
-            <LayoutDashboard size={24} />
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 pb-4 border-b border-slate-50">
+        <div className="flex items-start gap-5">
+          <div className="p-4 bg-primary text-white rounded-[24px] shadow-2xl shadow-primary/30 shrink-0">
+            <LayoutDashboard size={32} />
           </div>
-          <div>
-            <h2 className="text-4xl font-black tracking-tight">Tableau de Bord</h2>
-            <p className="text-slate-400 text-sm">Contrôle total : articles, événements, commentaires, SEO et paramètres.</p>
+          <div className="space-y-1">
+            <h2 className="text-2xl md:text-4xl font-black tracking-tight leading-tight">Tableau de Bord</h2>
+            <p className="text-slate-400 text-sm font-medium italic">Contrôle total : articles, événements et paramètres.</p>
           </div>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button 
             onClick={onGenerateCode}
-            className="px-5 py-3 bg-slate-800 text-white font-bold rounded-2xl hover:bg-slate-700 transition-all flex items-center gap-2 text-sm"
+            className="flex-1 md:flex-none px-6 py-4 bg-slate-900 text-white font-black rounded-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 text-xs shadow-xl"
           >
-            <Copy size={18} /> Export Code
+            <Copy size={18} /> EXPORT
           </button>
           {(activeTab === 'articles' || activeTab === 'events' || activeTab === 'polls' || activeTab === 'live-blog' || activeTab === 'web-tv') && (
             <button 
@@ -508,22 +508,24 @@ export const AdminDashboard = ({
                 else if (activeTab === 'live-blog') onCreateLiveBlog();
                 else if (activeTab === 'web-tv') onCreateWebTV();
               }}
-              className="px-5 py-3 bg-primary text-white font-bold rounded-2xl hover:bg-primary/90 transition-all flex items-center gap-2 text-sm shadow-lg shadow-primary/20"
+              className="flex-1 md:flex-none px-6 py-4 bg-primary text-white font-black rounded-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 text-xs shadow-xl shadow-primary/20 border-2 border-white"
             >
               <Plus size={18} /> 
-              {activeTab === 'articles' ? 'Nouvel Article' : activeTab === 'events' ? 'Nouvel Événement' : activeTab === 'polls' ? 'Nouveau Sondage' : activeTab === 'web-tv' ? 'Nouvelle Vidéo' : 'Nouveau Direct'}
+              NOUVEAU
             </button>
           )}
           <button 
             onClick={onLogout}
-            className="p-3 bg-slate-100 text-slate-500 rounded-2xl hover:bg-red-50 hover:text-red-500 transition-all"
+            className="p-4 bg-white text-slate-400 border border-slate-100 rounded-2xl hover:text-red-500 hover:bg-white transition-all shadow-sm group"
           >
-            <LogOut size={20} />
+            <LogOut size={22} className="group-hover:rotate-12 transition-transform" />
           </button>
         </div>
       </div>
 
-      <div className="flex border-b border-slate-100 overflow-x-auto whitespace-nowrap scrollbar-hide">
+      {/* Modern Horizontal Tabs with snap and custom scroll */}
+      <div className="relative group">
+        <div className="flex border-b border-slate-100 overflow-x-auto whitespace-nowrap scrollbar-hide snap-x scroll-smooth -mx-4 px-4 lg:mx-0 lg:px-0">
         <button 
           onClick={() => setActiveTab('articles')}
           className={cn(
@@ -651,6 +653,7 @@ export const AdminDashboard = ({
           Gestion des paiements
         </button>
       </div>
+    </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div key={activeTab} className="md:col-span-3 space-y-6">
@@ -2140,38 +2143,38 @@ export const AdminEditor = ({
 
   return (
     <div className="max-w-6xl mx-auto py-10 px-4 space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <button 
           onClick={onCancel}
-          className="flex items-center gap-2 text-slate-400 hover:text-slate-900 font-bold transition-all text-sm"
+          className="flex items-center gap-2 text-slate-400 hover:text-slate-900 font-black transition-all text-sm uppercase tracking-widest"
         >
-          <ArrowLeft size={18} /> Revenir au tableau de bord
+          <ArrowLeft size={18} /> RETOUR
         </button>
-        <div className="flex gap-3">
+        <div className="flex items-center gap-3">
           <button 
             onClick={() => setPreviewMode(!previewMode)}
             className={cn(
-              "px-5 py-2 rounded-xl flex items-center gap-2 font-bold text-sm transition-all",
-              previewMode ? "bg-slate-200 text-slate-700" : "bg-white border border-slate-200 text-slate-500"
+              "flex-1 sm:flex-none px-5 py-3 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase tracking-widest transition-all shadow-sm",
+              previewMode ? "bg-slate-900 text-white" : "bg-white border border-slate-100 text-slate-500"
             )}
           >
-            {previewMode ? <Edit3 size={18} /> : <Eye size={18} />}
+            {previewMode ? <Edit3 size={16} /> : <Eye size={16} />}
             {previewMode ? "Éditer" : "Aperçu"}
           </button>
           <button 
             onClick={handleSave}
             disabled={isSaving}
             className={cn(
-              "px-6 py-2 bg-primary text-white rounded-xl flex items-center gap-2 font-black shadow-lg shadow-primary/20 hover:scale-105 transition-all text-sm",
+              "flex-1 sm:flex-none px-6 py-3 bg-primary text-white rounded-2xl flex items-center justify-center gap-2 font-black shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all text-[10px] uppercase tracking-widest border-2 border-white",
               isSaving && "opacity-70 cursor-not-allowed"
             )}
           >
             {isSaving ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
-              <Check size={18} />
+              <Check size={16} />
             )}
-            {isSaving ? "Enregistrement..." : `Enregistrer ${type === 'article' ? "l'article" : "l'événement"}`}
+            {isSaving ? "Enregistrement..." : "Enregistrer"}
           </button>
         </div>
       </div>
@@ -2813,18 +2816,18 @@ export const LiveBlogEditor = ({ blog, onSave, onCancel }: { blog: Partial<LiveB
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-4 space-y-10">
-       <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <button 
           onClick={onCancel}
-          className="flex items-center gap-2 text-slate-400 hover:text-slate-900 font-bold transition-all text-sm"
+          className="flex items-center gap-2 text-slate-400 hover:text-slate-900 font-black transition-all text-sm uppercase tracking-widest"
         >
-          <ArrowLeft size={18} /> Revenir au tableau de bord
+          <ArrowLeft size={18} /> RETOUR
         </button>
         <button 
           onClick={() => onSave(formData)}
-          className="px-8 py-3 bg-primary text-white font-black rounded-2xl hover:bg-primary/90 transition-all shadow-xl shadow-primary/20 flex items-center gap-2"
+          className="px-8 py-4 bg-primary text-white font-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest border-2 border-white"
         >
-          <Save size={20} /> Enregistrer le Direct
+          <Save size={18} /> ENREGISTRER
         </button>
       </div>
 
@@ -2960,18 +2963,18 @@ export const WebTVEditor = ({ video, onSave, onCancel, categories }: { video: Pa
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-4 space-y-10">
-       <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <button 
           onClick={onCancel}
-          className="flex items-center gap-2 text-slate-400 hover:text-slate-900 font-bold transition-all text-sm"
+          className="flex items-center gap-2 text-slate-400 hover:text-slate-900 font-black transition-all text-sm uppercase tracking-widest"
         >
-          <ArrowLeft size={18} /> Revenir au tableau de bord
+          <ArrowLeft size={18} /> RETOUR
         </button>
         <button 
           onClick={() => onSave(formData)}
-          className="px-8 py-3 bg-primary text-white font-black rounded-2xl hover:bg-primary/90 transition-all shadow-xl shadow-primary/20 flex items-center gap-2"
+          className="px-8 py-4 bg-primary text-white font-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20 flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest border-2 border-white"
         >
-          <Save size={20} /> Enregistrer la Vidéo
+          <Save size={18} /> ENREGISTRER
         </button>
       </div>
 
