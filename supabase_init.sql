@@ -110,6 +110,7 @@ CREATE TABLE IF NOT EXISTS public.settings (
     urgentBannerText TEXT,
     urgentBannerActive BOOLEAN DEFAULT false,
     urgentBannerLink TEXT,
+    flashNews TEXT,
     categories TEXT[],
     maintenanceMode BOOLEAN DEFAULT false,
     donationAmounts INTEGER[],

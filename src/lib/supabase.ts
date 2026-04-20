@@ -651,6 +651,20 @@ export const SupabaseService = {
       .update({ status })
       .eq('id', id);
     if (error) console.error("Error updating transaction status:", error);
+  },
+
+  async importMockData(articles: Article[], events: Event[]): Promise<void> {
+    if (isPlaceholder) return;
+    
+    if (articles.length > 0) {
+      const { error: artError } = await supabase.from('articles').upsert(articles);
+      if (artError) throw artError;
+    }
+    
+    if (events.length > 0) {
+      const { error: evtError } = await supabase.from('events').upsert(events);
+      if (evtError) throw evtError;
+    }
   }
 };
 

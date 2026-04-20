@@ -88,6 +88,19 @@ type FirebaseUser = any;
 
 // --- Components ---
 
+// --- Helper Functions ---
+
+const safeFormatDate = (dateStr: any, formatStr: string = 'dd MMM yyyy') => {
+  try {
+    if (!dateStr) return '--';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '--';
+    return format(date, formatStr, { locale: fr });
+  } catch {
+    return '--';
+  }
+};
+
 const Badge = ({ children, category }: { children: React.ReactNode; category?: string }) => {
   const colors: Record<string, string> = {
     'Afrique': 'bg-orange-500 text-white',
@@ -175,7 +188,7 @@ const HeroSlideshow = ({
               {articles[currentIndex].title}
             </h2>
             <div className="flex items-center gap-4 mt-4 text-white/70 text-sm font-medium">
-              <span>{format(new Date(articles[currentIndex].date), 'dd MMM yyyy', { locale: fr })}</span>
+              <span>{safeFormatDate(articles[currentIndex].date, 'dd MMM yyyy')}</span>
               <span>•</span>
               <span 
                 onClick={(e) => { e.stopPropagation(); onAuthorClick?.(articles[currentIndex].author); }}
@@ -318,7 +331,7 @@ const ArticleCard = ({ article, onClick, variant = 'horizontal', onBookmark, isB
             {article.title}
           </h2>
           <div className="flex items-center gap-3 mt-2 text-white/70 text-xs">
-            <span>{format(new Date(article.date), 'dd MMM yyyy', { locale: fr })}</span>
+            <span>{safeFormatDate(article.date, 'dd MMM yyyy')}</span>
             <span>•</span>
             <span 
               onClick={(e) => { e.stopPropagation(); onAuthorClick?.(article.author); }}
@@ -538,7 +551,7 @@ const UserProfileView = ({
               <div key={c.id} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-3">
                  <div className="flex items-center justify-between">
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Commentaire</span>
-                    <span className="text-[10px] font-bold text-slate-400">{format(new Date(c.date), 'dd/MM/yyyy')}</span>
+                    <span className="text-[10px] font-bold text-slate-400">{safeFormatDate(c.date, 'dd/MM/yyyy')}</span>
                  </div>
                  <p className="text-slate-600 italic text-sm">"{c.content}"</p>
                  <button className="text-primary text-xs font-bold hover:underline">Voir l'article</button>
@@ -688,7 +701,7 @@ const EventSection = ({ events, onEventClick, onSeeAll }: { events: Event[], onE
             <div className="p-5 space-y-3">
               <div className="flex items-center gap-2 text-xs text-slate-500 font-bold">
                 <Calendar size={14} className="text-primary" />
-                {format(new Date(event.date), 'dd MMM yyyy', { locale: fr })}
+                {safeFormatDate(event.date, 'dd MMM yyyy')}
               </div>
               <div className="flex items-center gap-2 text-xs text-slate-500 font-bold">
                 <Map size={14} className="text-primary" />
@@ -725,7 +738,7 @@ const EventDetailView = ({ event, onBack }: { event: Event, onBack: () => void }
         <div className="flex items-center justify-center gap-6 text-sm text-slate-500 font-bold">
           <div className="flex items-center gap-2">
             <Calendar size={18} className="text-primary" />
-            {format(new Date(event.date), 'dd MMMM yyyy', { locale: fr })}
+            {safeFormatDate(event.date, 'dd MMMM yyyy')}
           </div>
           <div className="flex items-center gap-2">
             <Map size={18} className="text-primary" />
@@ -960,7 +973,8 @@ const AudioPlayer = ({ article }: { article: Article }) => {
 const ClassifiedsView = ({ classifieds, onBack, onAddClick }: { classifieds: Classified[], onBack: () => void, onAddClick: () => void }) => {
   const [activeTab, setActiveTab] = useState('all');
   
-  const filtered = activeTab === 'all' ? classifieds : classifieds.filter(c => c.category === activeTab);
+  const safeClassifieds = classifieds || [];
+  const filtered = activeTab === 'all' ? safeClassifieds : safeClassifieds.filter(c => c.category === activeTab);
 
   return (
     <motion.div 
@@ -990,8 +1004,8 @@ const ClassifiedsView = ({ classifieds, onBack, onAddClick }: { classifieds: Cla
             key={cat}
             onClick={() => setActiveTab(cat)}
             className={cn(
-              "px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest transition-all",
-              activeTab === cat ? "bg-slate-900 text-white" : "bg-white text-slate-400 border border-slate-100 hover:border-slate-300"
+               "px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest transition-all",
+               activeTab === cat ? "bg-slate-900 text-white" : "bg-white text-slate-400 border border-slate-100 hover:border-slate-300"
             )}
           >
             {cat === 'all' ? 'Toutes' : cat}
@@ -1007,7 +1021,7 @@ const ClassifiedsView = ({ classifieds, onBack, onAddClick }: { classifieds: Cla
                  <img src={item.imageUrl} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
                )}
                <div className="absolute top-4 left-4">
-                 <Badge>{item.category}</Badge>
+                 <Badge category={item.category}>{item.category}</Badge>
                </div>
                {item.price && (
                  <div className="absolute bottom-4 right-4 bg-slate-900 text-white px-4 py-2 rounded-2xl font-black text-sm">
@@ -1019,16 +1033,16 @@ const ClassifiedsView = ({ classifieds, onBack, onAddClick }: { classifieds: Cla
               <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors">{item.title}</h3>
               <div className="flex items-center gap-4 text-xs text-slate-400 font-bold">
                 <div className="flex items-center gap-1"><Map size={14} /> {item.location}</div>
-                <div className="flex items-center gap-1"><Clock size={14} /> {format(new Date(item.date), 'dd MMM')}</div>
+                <div className="flex items-center gap-1"><Clock size={14} /> {new Date(item.date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}</div>
               </div>
               <p className="text-slate-500 text-sm line-clamp-2 leading-relaxed">{item.description}</p>
               <div className="h-px bg-slate-50" />
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
-                    {item.username[0]}
+                    {(item.username || 'A')[0]}
                   </div>
-                  <span className="text-xs font-bold text-slate-600">{item.username}</span>
+                  <span className="text-xs font-bold text-slate-600">{item.username || 'Anonyme'}</span>
                 </div>
                 <button className="text-primary font-black text-xs uppercase tracking-widest hover:underline">Détails</button>
               </div>
@@ -1068,7 +1082,7 @@ const LiveBlogView = ({ blog, onBack }: { blog: LiveBlog, onBack: () => void }) 
       </div>
 
       <div className="space-y-12 relative before:absolute before:left-6 before:top-2 before:bottom-0 before:w-px before:bg-slate-100">
-        {blog.updates.map((update, idx) => (
+        {(blog.updates || []).map((update, idx) => (
           <motion.div 
             key={update.id}
             initial={{ opacity: 0, x: -20 }}
@@ -1078,7 +1092,15 @@ const LiveBlogView = ({ blog, onBack }: { blog: LiveBlog, onBack: () => void }) 
           >
             <div className="absolute left-[18px] top-1 w-3 h-3 rounded-full bg-primary ring-4 ring-primary/10" />
             <div className="flex items-center gap-3">
-               <span className="text-sm font-black text-primary">{format(new Date(update.date), 'HH:mm')}</span>
+               <span className="text-sm font-black text-primary">
+                 {(() => {
+                   try {
+                     return safeFormatDate(update.date, 'HH:mm');
+                   } catch {
+                     return '--:--';
+                   }
+                 })()}
+               </span>
                {update.type === 'urgent' && (
                  <span className="bg-red-50 text-red-500 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest border border-red-100">Urgent</span>
                )}
@@ -1198,7 +1220,7 @@ const WebTVView = ({ articles, onArticleClick }: { articles: Article[], onArticl
                 <h3 className="font-display font-black text-xl leading-tight line-clamp-2 group-hover:text-primary transition-colors">{article.title}</h3>
                 <div className="flex items-center gap-2 text-xs text-slate-400 font-bold">
                   <Clock size={14} />
-                  <span>{format(new Date(article.date), 'dd MMMM yyyy', { locale: fr })}</span>
+                  <span>{safeFormatDate(article.date, 'dd MMMM yyyy')}</span>
                 </div>
               </div>
             </motion.div>
@@ -1343,7 +1365,7 @@ const NotificationCenter = ({
                   {notif.topic || notif.type}
                 </span>
                 <span className="text-[9px] text-slate-400 font-bold whitespace-nowrap">
-                  {format(new Date(notif.date), 'HH:mm', { locale: fr })}
+                  {safeFormatDate(notif.date, 'HH:mm')}
                 </span>
               </div>
               <h4 className={cn("text-sm font-bold leading-tight group-hover:text-primary transition-colors", !notif.read ? "text-slate-900" : "text-slate-500")}>
@@ -1488,7 +1510,7 @@ const SupportChatWidget = ({ user, isDarkMode }: { user: FirebaseUser | null, is
                       {msg.content}
                     </div>
                     <span className="text-[8px] font-black text-slate-400 mt-2 uppercase tracking-tight opacity-60">
-                      {msg.isAdmin ? "Support Akwaba" : "Moi"} • {format(new Date(msg.date), 'HH:mm')}
+                      {msg.isAdmin ? "Support Akwaba" : "Moi"} • {safeFormatDate(msg.date, 'HH:mm')}
                     </span>
                   </div>
                 ))
@@ -1804,6 +1826,7 @@ export default function App() {
   const [currentView, setCurrentView] = useState<'home' | 'article' | 'search' | 'donate' | 'about' | 'privacy' | 'terms' | 'contact' | 'cookies' | 'event' | 'all-events' | 'admin' | 'admin-login' | 'webtv' | 'profile' | 'classifieds' | 'live-blog' | 'author-profile' | 'authors'>(() => {
     return (localStorage.getItem('akwaba_current_view') as any) || 'home';
   });
+
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(() => {
     const savedId = localStorage.getItem('akwaba_selected_article_id');
     if (savedId) {
@@ -1900,6 +1923,7 @@ export default function App() {
     maintenanceMode: false,
     urgentBannerActive: false,
     urgentBannerText: "",
+    flashNews: "Côte d'Ivoire : Lancement d'un nouveau programme de soutien aux startups technologiques à Abidjan.;Économie : La ZLECAf annonce une progression record des échanges intra-africains pour le premier trimestre.;Sport : Les préparatifs de la prochaine CAN avancent à grands pas, inspection des stades terminée.;Culture : Le festival des musiques urbaines d'Anoumabo (FEMUA) dévoile sa programmation internationale.;Monde : Sommet extraordinaire de l'Union Africaine sur la sécurité alimentaire prévu le mois prochain.",
     // Donations & Premium
     donationAmounts: [5000, 10000, 25000],
     donationPaymentMethods: ['PayPal', 'Orange Money', 'Wave', 'MTN', 'Moov', 'Stripe', 'Flutterwave'],
@@ -3060,13 +3084,15 @@ export default function App() {
     restDelta: 0.001
   });
 
-  const FLASH_NEWS = [
-    "Côte d'Ivoire : Lancement d'un nouveau programme de soutien aux startups technologiques à Abidjan.",
-    "Économie : La ZLECAf annonce une progression record des échanges intra-africains pour le premier trimestre.",
-    "Sport : Les préparatifs de la prochaine CAN avancent à grands pas, inspection des stades terminée.",
-    "Culture : Le festival des musiques urbaines d'Anoumabo (FEMUA) dévoile sa programmation internationale.",
-    "Monde : Sommet extraordinaire de l'Union Africaine sur la sécurité alimentaire prévu le mois prochain."
-  ];
+  const FLASH_NEWS = siteSettings.flashNews 
+    ? siteSettings.flashNews.split(';').filter(n => n.trim().length > 0)
+    : [
+        "Côte d'Ivoire : Lancement d'un nouveau programme de soutien aux startups technologiques à Abidjan.",
+        "Économie : La ZLECAf annonce une progression record des échanges intra-africains pour le premier trimestre.",
+        "Sport : Les préparatifs de la prochaine CAN avancent à grands pas, inspection des stades terminée.",
+        "Culture : Le festival des musiques urbaines d'Anoumabo (FEMUA) dévoile sa programmation internationale.",
+        "Monde : Sommet extraordinaire de l'Union Africaine sur la sécurité alimentaire prévu le mois prochain."
+      ];
 
   const trendingArticles = [...adminArticles]
     .filter(article => {
@@ -3148,18 +3174,20 @@ export default function App() {
           >
             <div className={cn(
               "text-white p-6 rounded-3xl shadow-2xl flex gap-4 items-start border-4 border-white/20",
-              typeof activeNotification === 'object' && activeNotification.type === 'success' ? "bg-emerald-600" : 
-              typeof activeNotification === 'object' && activeNotification.type === 'urgent' ? "bg-red-600" : "bg-primary"
+              (typeof activeNotification === 'object' && activeNotification.type === 'urgent') ? "bg-red-600" : 
+              (typeof activeNotification === 'object' && activeNotification.type === 'info') ? "bg-primary" : "bg-emerald-600"
             )}>
               <div className="p-2 bg-white/20 rounded-xl shrink-0">
-                {typeof activeNotification === 'object' && activeNotification.type === 'success' ? <CheckCircle size={24} /> : <Bell size={24} />}
+                {(typeof activeNotification === 'object' && activeNotification.type === 'urgent') ? <AlertTriangle size={24} /> :
+                 (typeof activeNotification === 'object' && activeNotification.type === 'info') ? <Bell size={24} /> : <CheckCircle size={24} />}
               </div>
               <div className="flex-1 space-y-1">
                 <div className="text-[10px] font-black uppercase tracking-widest opacity-80">
                   {typeof activeNotification === 'object' ? (
                     activeNotification.type === 'success' ? 'Confirmation' : 
-                    activeNotification.type === 'urgent' ? 'Alerte Urgente' : 'Information'
-                  ) : 'Information'}
+                    activeNotification.type === 'urgent' ? 'Alerte Urgente' : 
+                    activeNotification.type === 'info' ? 'Information' : 'Confirmation'
+                  ) : 'Confirmation'}
                 </div>
                 <p className="text-sm font-bold leading-tight">
                   {typeof activeNotification === 'string' ? activeNotification : activeNotification.message}
@@ -3355,15 +3383,35 @@ export default function App() {
             >
               <Menu size={24} />
             </button>
-            <div onClick={goHome} className="cursor-pointer flex items-center gap-4">
+            <div 
+              onClick={() => {
+                const newCount = adminClickCount + 1;
+                if (newCount >= 5) {
+                  if (isAdminAuthenticated) {
+                    setCurrentView('admin');
+                    setActiveNotification("Mode Admin : Bonjour !");
+                  } else {
+                    setCurrentView('admin-login');
+                    setActiveNotification("Mode Admin : Authentification requise.");
+                  }
+                  setAdminClickCount(0);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                  setTimeout(() => setActiveNotification(null), 3000);
+                } else {
+                  setAdminClickCount(newCount);
+                  // Optional: visual feedback in dev console or subtle toast
+                }
+              }}
+              className="cursor-pointer flex items-center gap-4 group"
+            >
               <img 
                 src="https://raw.githubusercontent.com/Akwabanews/Sources/main/images/2DB685A1-EE6B-478E-B70B-58F490D2948A.jpeg" 
                 alt="Akwaba Info Logo" 
-                className="w-16 h-16 md:w-20 md:h-20 object-contain rounded-2xl shadow-md border border-slate-50"
+                className="w-16 h-16 md:w-20 md:h-20 object-contain rounded-2xl shadow-md border border-slate-50 group-active:scale-95 transition-transform"
                 referrerPolicy="no-referrer"
                 decoding="async"
               />
-              <div>
+              <div onClick={(e) => { e.stopPropagation(); goHome(); }}>
                 <h1 className="text-xl md:text-3xl font-black tracking-tighter">
                   AKWABA <span className="text-primary">INFO</span>
                 </h1>
@@ -3737,13 +3785,9 @@ export default function App() {
                 <LiveBlogView 
                   blog={activeLiveBlog || (liveBlogs.length > 0 ? liveBlogs[0] : {
                     id: 'mock-live',
-                    title: "Suivi en direct : Sommet économique d'Abidjan",
-                    updates: [
-                      { id: '1', date: new Date().toISOString(), content: "Le sommet vient de s'ouvrir au Palais de la Culture.", type: 'info', author: 'Rédaction' },
-                      { id: '2', date: new Date(Date.now() - 1000*60*30).toISOString(), content: "Les délégations arrivent progressivement.", type: 'info', author: 'Rédaction' }
-                    ],
+                    title: "Dernière Actualité",
+                    updates: [],
                     status: 'live',
-                    createdAt: new Date().toISOString()
                   } as LiveBlog)}
                   onBack={goHome} 
                 />
@@ -3773,7 +3817,7 @@ export default function App() {
               }
               return (
                 <ClassifiedsView 
-                  classifieds={classifieds.length > 0 ? classifieds : []}
+                  classifieds={classifieds || []}
                   onBack={goHome} 
                   onAddClick={() => {
                     if(!currentUser) handleUserLogin();
@@ -3846,7 +3890,7 @@ export default function App() {
                       )}
                     </div>
                     <span>•</span>
-                  <span>{format(new Date(selectedArticle.date), 'dd MMMM yyyy', { locale: fr })}</span>
+                  <span>{safeFormatDate(selectedArticle.date, 'dd MMMM yyyy')}</span>
                   <span>•</span>
                   <span className="flex items-center gap-1"><Clock size={14} /> {selectedArticle.readingTime}</span>
                 </div>
@@ -4155,7 +4199,7 @@ export default function App() {
                                   <div className="flex justify-between items-center">
                                     <span className="font-bold text-sm">{comment.username}</span>
                                     <span className="text-[10px] text-slate-400">
-                                      {format(new Date(comment.date), 'dd MMM yyyy HH:mm', { locale: fr })}
+                                      {safeFormatDate(comment.date, 'dd MMM yyyy HH:mm')}
                                     </span>
                                   </div>
                                   <p className="text-sm text-slate-600 leading-relaxed">{comment.content}</p>
@@ -4891,7 +4935,7 @@ Dernière mise à jour : Avril 2026
                     <div className="p-6 space-y-3">
                       <div className="flex items-center gap-2 text-primary">
                         <Calendar size={14} />
-                        <span className="text-xs font-bold uppercase tracking-wider">{format(new Date(event.date), 'dd MMMM yyyy', { locale: fr })}</span>
+                        <span className="text-xs font-bold uppercase tracking-wider">{safeFormatDate(event.date, 'dd MMMM yyyy')}</span>
                       </div>
                       <h3 className="font-black text-xl leading-tight group-hover:text-primary transition-colors line-clamp-2">{event.title}</h3>
                       <div className="flex items-center gap-2 text-slate-400">
@@ -5162,31 +5206,8 @@ Dernière mise à jour : Avril 2026
           </div>
         </div>
         <div className="max-w-7xl mx-auto px-4 mt-12 pt-8 border-t border-slate-100 text-center text-xs text-slate-400">
-          <div 
-            onClick={() => {
-              const newCount = adminClickCount + 1;
-              if (newCount >= 5) {
-                if (isAdminAuthenticated) {
-                  setCurrentView('admin');
-                  setActiveNotification("Mode Admin : Bonjour !");
-                } else {
-                  setCurrentView('admin-login');
-                  setActiveNotification("Mode Admin : Authentification requise.");
-                }
-                setAdminClickCount(0);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-                setTimeout(() => setActiveNotification(null), 3000);
-              } else {
-                setAdminClickCount(newCount);
-              }
-            }}
-            className="cursor-pointer py-4 select-none"
-            title="Accès réservé"
-          >
+          <div className="py-4 select-none">
             © 2026 Akwaba Info. Tous droits réservés. Développé avec passion en Afrique.
-            {adminClickCount > 0 && adminClickCount < 5 && (
-              <span className="ml-2 opacity-50">({adminClickCount}/5)</span>
-            )}
           </div>
         </div>
       </footer>

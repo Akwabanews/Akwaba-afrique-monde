@@ -141,6 +141,7 @@ export interface SiteSettings {
   urgentBannerText?: string;
   urgentBannerActive?: boolean;
   urgentBannerLink?: string;
+  flashNews?: string; // Semicolon separated news for ticker
   // Categories
   categories: string[];
   // Maintenance

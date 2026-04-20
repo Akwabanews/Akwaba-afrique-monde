@@ -60,6 +60,7 @@ import ReactMarkdown from 'react-markdown';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { SupabaseService } from '../lib/supabase';
+import { MOCK_ARTICLES, MOCK_EVENTS } from '../constants';
 
 export const AdminLogin = ({ onLogin }: { onLogin: () => void }) => {
   return (
@@ -693,24 +694,64 @@ export const AdminDashboard = ({
 
               {/* Breaking News Banner */}
               <div className="bg-white rounded-3xl border border-slate-100 shadow-xl p-8 space-y-6">
-                <h3 className="text-xl font-black flex items-center gap-2 text-red-500"><Megaphone /> Bandeau Urgent</h3>
-                <div className="flex items-center gap-4 bg-red-50 p-4 rounded-2xl border border-red-100">
-                  <input 
-                    type="checkbox" 
-                    checked={tempSettings.urgentBannerActive}
-                    onChange={e => setTempSettings({...tempSettings, urgentBannerActive: e.target.checked})}
-                    className="w-6 h-6 accent-red-500"
-                  />
-                  <div className="flex-1 space-y-2">
-                    <label className="text-[10px] font-black uppercase text-red-700">Activer le bandeau d'alerte en haut du site</label>
+                <h3 className="text-xl font-black flex items-center gap-2 text-red-500"><Megaphone /> Bandeau Urgent & Flash Info</h3>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4 bg-red-50 p-4 rounded-2xl border border-red-100">
                     <input 
-                      type="text" 
-                      placeholder="Texte du message urgent..."
-                      className="w-full bg-white rounded-xl px-4 py-3 text-sm outline-none border border-red-200"
-                      value={tempSettings.urgentBannerText}
-                      onChange={e => setTempSettings({...tempSettings, urgentBannerText: e.target.value})}
+                      type="checkbox" 
+                      checked={tempSettings.urgentBannerActive}
+                      onChange={e => setTempSettings({...tempSettings, urgentBannerActive: e.target.checked})}
+                      className="w-6 h-6 accent-red-500"
                     />
+                    <div className="flex-1 space-y-2">
+                      <label className="text-[10px] font-black uppercase text-red-700">Activer le bandeau d'alerte (Rouge fix)</label>
+                      <input 
+                        type="text" 
+                        placeholder="Texte du message urgent..."
+                        className="w-full bg-white rounded-xl px-4 py-3 text-sm outline-none border border-red-200"
+                        value={tempSettings.urgentBannerText}
+                        onChange={e => setTempSettings({...tempSettings, urgentBannerText: e.target.value})}
+                      />
+                    </div>
                   </div>
+
+                  <div className="space-y-2 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <label className="text-[10px] font-black uppercase text-slate-400">Contenu du Flash Info (Bande passante)</label>
+                    <textarea 
+                      placeholder="Séparez chaque nouvelle par un point-virgule (;)"
+                      className="w-full bg-white rounded-xl px-4 py-3 text-sm outline-none border border-slate-200 min-h-[100px] resize-none"
+                      value={tempSettings.flashNews}
+                      onChange={e => setTempSettings({...tempSettings, flashNews: e.target.value})}
+                    />
+                    <p className="text-[9px] text-slate-400 font-bold italic">Note : Utilisez le point-virgule (;) pour séparer les différents messages qui défileront.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Import Demo Data */}
+              <div className="bg-orange-50 rounded-3xl border border-orange-100 p-8 space-y-4">
+                <h3 className="text-xl font-black flex items-center gap-2 text-orange-700"><AlertTriangle size={20} /> Zone de récupération</h3>
+                <p className="text-sm text-orange-600 font-bold leading-relaxed">
+                  Si vos articles ont disparu suite à une réinitialisation de la base de données, vous pouvez importer les données de démonstration ci-dessous vers votre Cloud (Supabase).
+                </p>
+                <div className="pt-2">
+                  <button 
+                    onClick={async () => {
+                      if (confirm("Importer les articles et événements de démonstration vers Supabase ? Cela n'effacera pas vos articles existants.")) {
+                        try {
+                          await SupabaseService.importMockData(MOCK_ARTICLES, MOCK_EVENTS);
+                          alert("Données importées avec succès ! Rafraîchissez la page pour voir les changements.");
+                          window.location.reload();
+                        } catch (e: any) {
+                          alert("Erreur lors de l'import : " + e.message);
+                        }
+                      }
+                    }}
+                    className="bg-orange-600 text-white px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-orange-200 hover:scale-105 transition-all"
+                  >
+                    Restaurer les données de démonstration (Cloud)
+                  </button>
                 </div>
               </div>
 
