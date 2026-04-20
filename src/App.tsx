@@ -3448,7 +3448,12 @@ export default function App() {
             >
               <Menu size={24} />
             </button>
-            {!(isAdminAuthenticated && currentView === 'admin') && (
+            {isAdminAuthenticated && currentView === 'admin' ? (
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-8 bg-primary rounded-full" />
+                <h1 className="text-2xl font-black tracking-tighter uppercase">ADMIN</h1>
+              </div>
+            ) : (
               <div 
                 onClick={() => {
                   const newCount = adminClickCount + 1;
