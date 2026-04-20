@@ -3448,43 +3448,45 @@ export default function App() {
             >
               <Menu size={24} />
             </button>
-            <div 
-              onClick={() => {
-                const newCount = adminClickCount + 1;
-                if (newCount >= 5) {
-                  if (isAdminAuthenticated) {
-                    setCurrentView('admin');
-                    setActiveNotification("Mode Admin : Bonjour !");
+            {!(isAdminAuthenticated && currentView === 'admin') && (
+              <div 
+                onClick={() => {
+                  const newCount = adminClickCount + 1;
+                  if (newCount >= 5) {
+                    if (isAdminAuthenticated) {
+                      setCurrentView('admin');
+                      setActiveNotification("Mode Admin : Bonjour !");
+                    } else {
+                      setCurrentView('admin-login');
+                      setActiveNotification("Mode Admin : Authentification requise.");
+                    }
+                    setAdminClickCount(0);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    setTimeout(() => setActiveNotification(null), 3000);
                   } else {
-                    setCurrentView('admin-login');
-                    setActiveNotification("Mode Admin : Authentification requise.");
+                    setAdminClickCount(newCount);
+                    // Optional: visual feedback in dev console or subtle toast
                   }
-                  setAdminClickCount(0);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                  setTimeout(() => setActiveNotification(null), 3000);
-                } else {
-                  setAdminClickCount(newCount);
-                  // Optional: visual feedback in dev console or subtle toast
-                }
-              }}
-              className="cursor-pointer flex items-center gap-4 group"
-            >
-              <img 
-                src="https://raw.githubusercontent.com/Akwabanews/Sources/main/images/2DB685A1-EE6B-478E-B70B-58F490D2948A.jpeg" 
-                alt="Akwaba Info Logo" 
-                className="w-16 h-16 md:w-20 md:h-20 object-contain rounded-2xl shadow-md border border-slate-50 group-active:scale-95 transition-transform"
-                referrerPolicy="no-referrer"
-                decoding="async"
-              />
-              <div onClick={(e) => { e.stopPropagation(); goHome(); }}>
-                <h1 className="text-xl md:text-3xl font-black tracking-tighter">
-                  AKWABA <span className="text-primary">INFO</span>
-                </h1>
-                <p className="hidden md:block text-xs font-bold text-slate-400 uppercase tracking-widest -mt-1">
-                  L’info du monde en un clic
-                </p>
+                }}
+                className="cursor-pointer flex items-center gap-4 group"
+              >
+                <img 
+                  src="https://raw.githubusercontent.com/Akwabanews/Sources/main/images/2DB685A1-EE6B-478E-B70B-58F490D2948A.jpeg" 
+                  alt="Akwaba Info Logo" 
+                  className="w-16 h-16 md:w-20 md:h-20 object-contain rounded-2xl shadow-md border border-slate-50 group-active:scale-95 transition-transform"
+                  referrerPolicy="no-referrer"
+                  decoding="async"
+                />
+                <div onClick={(e) => { e.stopPropagation(); goHome(); }}>
+                  <h1 className="text-xl md:text-3xl font-black tracking-tighter">
+                    AKWABA <span className="text-primary">INFO</span>
+                  </h1>
+                  <p className="hidden md:block text-xs font-bold text-slate-400 uppercase tracking-widest -mt-1">
+                    L’info du monde en un clic
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Desktop Nav */}
@@ -3540,12 +3542,14 @@ export default function App() {
           </nav>
 
           <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
-            <button 
-              onClick={() => navigateTo('search')}
-              className={cn("p-2 rounded-full transition-colors", isDarkMode ? "hover:bg-slate-800" : "hover:bg-slate-100")}
-            >
-              <Search size={22} />
-            </button>
+            {!(isAdminAuthenticated && currentView === 'admin') && (
+              <button 
+                onClick={() => navigateTo('search')}
+                className={cn("p-2 rounded-full transition-colors", isDarkMode ? "hover:bg-slate-800" : "hover:bg-slate-100")}
+              >
+                <Search size={22} />
+              </button>
+            )}
             <button 
               onClick={toggleDarkMode}
               className={cn("p-2 rounded-full transition-colors", isDarkMode ? "hover:bg-slate-800" : "hover:bg-slate-100")}
